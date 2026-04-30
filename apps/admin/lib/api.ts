@@ -61,7 +61,7 @@ export async function login(phone: string, password: string): Promise<User> {
 }
 
 export async function getCurrentUser(): Promise<User> {
-  return fetchApi<User>("/api/v1/auth/me", {
+  return fetchApi<User>("/api/v1/me", {
     method: "GET",
   });
 }
