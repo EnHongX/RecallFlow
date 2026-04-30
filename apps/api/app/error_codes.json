@@ -41,6 +41,11 @@
   },
   "COMMON_002": {
     "code": "COMMON_002",
+    "message": "资源不存在",
+    "http_status": 404
+  },
+  "COMMON_003": {
+    "code": "COMMON_003",
     "message": "服务器内部错误",
     "http_status": 500
   }
