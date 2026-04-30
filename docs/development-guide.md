@@ -1,6 +1,6 @@
 # RecallFlow 开发指南
 
-> 用途：记录本地开发、常用命令、协作流程和任务勾选规则。当前是占位版，具体命令在项目初始化后补齐。
+> 用途：记录本地开发、常用命令、协作流程和任务勾选规则。
 
 ## 文档分工
 
@@ -43,54 +43,72 @@ README.md
 
 ## 常用命令
 
-项目初始化后补齐。
+以下命令默认在仓库根目录执行。
 
 ### 安装依赖
 
 ```bash
-# TODO
+pnpm install
+.venv/bin/pip install -r apps/api/requirements.txt
 ```
 
 ### 启动数据库
 
 ```bash
-# TODO
+docker compose up -d postgres
 ```
 
 ### 启动后端
 
 ```bash
-# TODO
+pnpm dev:api
 ```
 
 ### 启动用户端
 
 ```bash
-# TODO
+pnpm dev:web
 ```
 
 ### 启动后台端
 
 ```bash
-# TODO
+pnpm dev:admin
 ```
 
 ### 数据库迁移
 
 ```bash
-# TODO
+cd apps/api
+../../.venv/bin/alembic upgrade head
+../../.venv/bin/alembic revision --autogenerate -m "describe change"
 ```
 
 ### 后端测试
 
 ```bash
-# TODO
+cd apps/api
+../../.venv/bin/pytest
 ```
 
 ### 前端检查
 
 ```bash
-# TODO
+pnpm lint
+pnpm typecheck
+```
+
+### API 健康检查
+
+```bash
+curl http://localhost:5005/api/v1/health
+curl http://localhost:5005/api/v1/db/health
+```
+
+### 停止本地数据库
+
+```bash
+docker compose down
 ```
 
 ## 协作流程

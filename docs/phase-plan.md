@@ -6,17 +6,17 @@
 
 ### 项目初始化
 
-- [ ] 初始化用户端前端：`Next.js + TypeScript`
-- [ ] 初始化独立后台前端：`Next.js + TypeScript`
-- [ ] 初始化后端 API：`FastAPI`
-- [ ] 配置 `Docker Compose`
-- [ ] 配置 `PostgreSQL`
-- [ ] 配置 `Alembic`
-- [ ] 配置 `.env.example`
-- [ ] 补齐 `docs/development-guide.md` 常用命令
-- [ ] 配置后端测试：`pytest`
-- [ ] 配置前端 `lint`
-- [ ] 配置前端 `typecheck`
+- [x] 初始化用户端前端：`Next.js + TypeScript`
+- [x] 初始化独立后台前端：`Next.js + TypeScript`
+- [x] 初始化后端 API：`FastAPI`
+- [x] 配置 `Docker Compose`
+- [x] 配置 `PostgreSQL`
+- [x] 配置 `Alembic`
+- [x] 配置 `.env.example`
+- [x] 补齐 `docs/development-guide.md` 常用命令
+- [x] 配置后端测试：`pytest`
+- [x] 配置前端 `lint`
+- [x] 配置前端 `typecheck`
 
 ### 账号与孩子
 
