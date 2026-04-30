@@ -46,3 +46,22 @@ class ErrorResponse(BaseModel):
 class SuccessResponse(BaseModel):
     success: bool = True
     message: str = "操作成功"
+
+
+class StudentCreate(BaseModel):
+    name: str
+    grade: str
+
+
+class StudentUpdate(BaseModel):
+    name: str
+    grade: str
+
+
+class StudentResponse(BaseModel):
+    id: int
+    name: str
+    grade: str
+    is_current: bool
+
+    model_config = ConfigDict(from_attributes=True)
