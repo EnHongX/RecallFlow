@@ -65,3 +65,65 @@ class StudentResponse(BaseModel):
     is_current: bool
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class SubjectResponse(BaseModel):
+    id: int
+    name: str
+    code: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class QuestionCreate(BaseModel):
+    subject_id: int
+    type: str
+    prompt: str
+    answer: str
+    explanation: str | None = None
+    child_explanation: str | None = None
+    fun_hint: str | None = None
+    difficulty: str = "normal"
+    tags: str | None = None
+    source: str | None = None
+    grading_method: str = "manual"
+    student_id: int | None = None
+
+
+class QuestionUpdate(BaseModel):
+    subject_id: int | None = None
+    type: str | None = None
+    prompt: str | None = None
+    answer: str | None = None
+    explanation: str | None = None
+    child_explanation: str | None = None
+    fun_hint: str | None = None
+    difficulty: str | None = None
+    tags: str | None = None
+    source: str | None = None
+    grading_method: str | None = None
+    status: str | None = None
+    student_id: int | None = None
+
+
+class QuestionResponse(BaseModel):
+    id: int
+    user_id: int
+    student_id: int | None
+    subject_id: int
+    topic_id: int | None
+    type: str
+    prompt: str
+    answer: str
+    explanation: str | None
+    child_explanation: str | None
+    fun_hint: str | None
+    difficulty: str
+    tags: str | None
+    source: str | None
+    grading_method: str
+    status: str
+    subject_name: str | None = None
+    student_name: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)

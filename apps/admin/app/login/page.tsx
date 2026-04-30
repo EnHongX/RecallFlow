@@ -28,7 +28,7 @@ export default function LoginPage() {
 
     try {
       await login(phone, password);
-      router.push("/dashboard");
+      router.push("/home");
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError.message || "登录失败，请重试");

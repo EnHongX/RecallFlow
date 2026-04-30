@@ -122,3 +122,125 @@ export async function getCurrentStudent(): Promise<Student | null> {
     method: "GET",
   });
 }
+
+export interface Subject {
+  id: number;
+  name: string;
+  code: string;
+}
+
+export interface Question {
+  id: number;
+  user_id: number;
+  student_id: number | null;
+  subject_id: number;
+  topic_id: number | null;
+  type: string;
+  prompt: string;
+  answer: string;
+  explanation: string | null;
+  child_explanation: string | null;
+  fun_hint: string | null;
+  difficulty: string;
+  tags: string | null;
+  source: string | null;
+  grading_method: string;
+  status: string;
+  subject_name?: string | null;
+  student_name?: string | null;
+}
+
+export interface QuestionCreate {
+  subject_id: number;
+  type: string;
+  prompt: string;
+  answer: string;
+  explanation?: string | null;
+  child_explanation?: string | null;
+  fun_hint?: string | null;
+  difficulty?: string;
+  tags?: string | null;
+  source?: string | null;
+  grading_method?: string;
+  student_id?: number | null;
+}
+
+export interface QuestionUpdate {
+  subject_id?: number | null;
+  type?: string | null;
+  prompt?: string | null;
+  answer?: string | null;
+  explanation?: string | null;
+  child_explanation?: string | null;
+  fun_hint?: string | null;
+  difficulty?: string | null;
+  tags?: string | null;
+  source?: string | null;
+  grading_method?: string | null;
+  status?: string | null;
+  student_id?: number | null;
+}
+
+export interface QuestionFilter {
+  subject_id?: number;
+  type?: string;
+  grading_method?: string;
+  status?: string;
+  student_id?: number;
+  keyword?: string;
+}
+
+export async function getSubjects(): Promise<Subject[]> {
+  return fetchApi<Subject[]>("/api/v1/subjects", {
+    method: "GET",
+  });
+}
+
+export async function getQuestions(filter?: QuestionFilter): Promise<Question[]> {
+  const params = new URLSearchParams();
+  if (filter) {
+    if (filter.subject_id !== undefined) params.append("subject_id", filter.subject_id.toString());
+    if (filter.type) params.append("type", filter.type);
+    if (filter.grading_method) params.append("grading_method", filter.grading_method);
+    if (filter.status) params.append("status", filter.status);
+    if (filter.student_id !== undefined) params.append("student_id", filter.student_id.toString());
+    if (filter.keyword) params.append("keyword", filter.keyword);
+  }
+  const queryString = params.toString();
+  const url = queryString ? `/api/v1/questions?${queryString}` : "/api/v1/questions";
+  return fetchApi<Question[]>(url, {
+    method: "GET",
+  });
+}
+
+export async function getQuestion(questionId: number): Promise<Question> {
+  return fetchApi<Question>(`/api/v1/questions/${questionId}`, {
+    method: "GET",
+  });
+}
+
+export async function createQuestion(data: QuestionCreate): Promise<Question> {
+  return fetchApi<Question>("/api/v1/questions", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateQuestion(questionId: number, data: QuestionUpdate): Promise<Question> {
+  return fetchApi<Question>(`/api/v1/questions/${questionId}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteQuestion(questionId: number): Promise<SuccessResponse> {
+  return fetchApi<SuccessResponse>(`/api/v1/questions/${questionId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function restoreQuestion(questionId: number): Promise<SuccessResponse> {
+  return fetchApi<SuccessResponse>(`/api/v1/questions/${questionId}/restore`, {
+    method: "POST",
+  });
+}

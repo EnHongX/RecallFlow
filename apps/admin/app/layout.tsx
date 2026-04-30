@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AppProvider } from "./contexts/AppContext";
 import "./styles.css";
 
 export const metadata: Metadata = {
@@ -9,7 +10,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="zh-CN">
-      <body>{children}</body>
+      <body>
+        <AppProvider>{children}</AppProvider>
+      </body>
     </html>
   );
 }
