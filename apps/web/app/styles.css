@@ -67,3 +67,292 @@ h1 {
 .panel strong {
   font-size: 22px;
 }
+
+.auth-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+}
+
+.auth-card {
+  background: #ffffff;
+  border: 1px solid #dfe6ef;
+  border-radius: 16px;
+  padding: 40px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+}
+
+.auth-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: #172026;
+}
+
+.auth-subtitle {
+  color: #667789;
+  font-size: 14px;
+  margin: 0 0 32px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334151;
+}
+
+.form-input {
+  height: 48px;
+  padding: 12px 16px;
+  border: 1px solid #dfe6ef;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #172026;
+  background: #ffffff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #2f6f73;
+  box-shadow: 0 0 0 3px rgba(47, 111, 115, 0.1);
+}
+
+.form-input::placeholder {
+  color: #99aabb;
+}
+
+.auth-button {
+  height: 48px;
+  background: #2f6f73;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.auth-button:hover:not(:disabled) {
+  background: #265c5f;
+}
+
+.auth-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 14px;
+  color: #667789;
+}
+
+.auth-link {
+  color: #2f6f73;
+  text-decoration: none;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+.error-alert {
+  background: #fff5f5;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #991b1b;
+  font-size: 14px;
+}
+
+.success-alert {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #166534;
+  font-size: 14px;
+}
+
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.dashboard-header {
+  margin-bottom: 32px;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.dashboard-title {
+  font-size: 32px;
+  margin: 0 0 8px;
+}
+
+.dashboard-subtitle {
+  color: #667789;
+  font-size: 16px;
+  margin: 0;
+}
+
+.logout-button {
+  padding: 10px 20px;
+  background: #ffffff;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.logout-button:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+.logout-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dashboard-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 32px;
+}
+
+.status-active {
+  color: #16a34a;
+}
+
+.dashboard-info {
+  margin-top: 32px;
+}
+
+.info-card {
+  background: #ffffff;
+  border: 1px solid #dfe6ef;
+  border-radius: 12px;
+  padding: 28px;
+}
+
+.info-card h2 {
+  font-size: 18px;
+  margin: 0 0 16px;
+  color: #172026;
+}
+
+.info-card p {
+  color: #52616f;
+  line-height: 1.7;
+  margin: 0 0 12px;
+}
+
+.info-card ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #52616f;
+  line-height: 1.8;
+}
+
+.info-card li {
+  margin-bottom: 4px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 16px;
+  margin: 32px 0;
+}
+
+.action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0 32px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-button.primary {
+  background: #2f6f73;
+  color: #ffffff;
+  border: none;
+}
+
+.action-button.primary:hover {
+  background: #265c5f;
+}
+
+.action-button.secondary {
+  background: #ffffff;
+  color: #2f6f73;
+  border: 2px solid #2f6f73;
+}
+
+.action-button.secondary:hover {
+  background: #f7fafb;
+}
+
+.info-section {
+  margin-top: 40px;
+}
+
+@media (max-width: 768px) {
+  .dashboard-grid,
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .header-content {
+    flex-direction: column;
+  }
+
+  .auth-card {
+    padding: 28px 20px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .action-button {
+    width: 100%;
+  }
+}
