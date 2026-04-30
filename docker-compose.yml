@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: recallflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-recallflow}
+      POSTGRES_USER: ${POSTGRES_USER:-recallflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-recallflow}
+    ports:
+      - "55432:5432"
+    volumes:
+      - recallflow_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-recallflow} -d ${POSTGRES_DB:-recallflow}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  recallflow_postgres_data:

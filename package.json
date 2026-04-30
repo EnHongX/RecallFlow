@@ -1,0 +1,13 @@
+{
+  "name": "recallflow",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev:web": "pnpm --dir apps/web dev",
+    "dev:admin": "pnpm --dir apps/admin dev",
+    "dev:api": ".venv/bin/uvicorn app.main:app --app-dir apps/api --host 0.0.0.0 --port 5005",
+    "lint": "pnpm --dir apps/web lint && pnpm --dir apps/admin lint",
+    "typecheck": "pnpm --dir apps/web typecheck && pnpm --dir apps/admin typecheck"
+  },
+  "packageManager": "pnpm@10.33.2"
+}
