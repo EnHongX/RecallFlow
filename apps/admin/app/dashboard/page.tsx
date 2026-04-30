@@ -8,7 +8,7 @@ import {
   getStudents,
   createStudent,
   updateStudent,
-  setCurrentStudent,
+  setCurrentStudent as setCurrentStudentApi,
   type User,
   type Student,
   type ApiError,
@@ -34,10 +34,11 @@ export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
-  const [currentStudent, setCurrentStudent] = useState<Student | null>(null);
+  const [currentStudent, setCurrentStudentState] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
+  const [switchingStudentId, setSwitchingStudentId] = useState<number | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
@@ -46,25 +47,25 @@ export default function DashboardPage() {
   const [formGrade, setFormGrade] = useState("一年级");
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    const fetchData = async () => {
+      try {
+        const userData = await getCurrentUser();
+        setUser(userData);
+        const studentsData = await getStudents();
+        setStudents(studentsData);
+        const current = studentsData.find((s) => s.is_current) || null;
+        setCurrentStudentState(current);
+      } catch (err) {
+        const apiError = err as ApiError;
+        setError(apiError.message || "获取信息失败");
+        router.push("/login");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const fetchData = async () => {
-    try {
-      const userData = await getCurrentUser();
-      setUser(userData);
-      const studentsData = await getStudents();
-      setStudents(studentsData);
-      const current = studentsData.find((s) => s.is_current) || null;
-      setCurrentStudent(current);
-    } catch (err) {
-      const apiError = err as ApiError;
-      setError(apiError.message || "获取信息失败");
-      router.push("/login");
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchData();
+  }, [router]);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -104,7 +105,7 @@ export default function DashboardPage() {
       const newStudent = await createStudent(formName.trim(), formGrade);
       setStudents([...students, newStudent]);
       if (students.length === 0) {
-        setCurrentStudent(newStudent);
+        setCurrentStudentState(newStudent);
       }
       setShowAddModal(false);
     } catch (err) {
@@ -134,7 +135,7 @@ export default function DashboardPage() {
       );
       setStudents(newStudents);
       if (currentStudent?.id === updated.id) {
-        setCurrentStudent(updated);
+        setCurrentStudentState(updated);
       }
       setShowEditModal(false);
       setEditingStudent(null);
@@ -147,20 +148,32 @@ export default function DashboardPage() {
   };
 
   const handleSetCurrent = async (studentId: number) => {
+    setSwitchingStudentId(studentId);
+    setError("");
     try {
-      await setCurrentStudent(studentId);
+      await setCurrentStudentApi(studentId);
       const newStudents = students.map((s) => ({
         ...s,
         is_current: s.id === studentId,
       }));
       setStudents(newStudents);
       const current = newStudents.find((s) => s.is_current) || null;
-      setCurrentStudent(current);
+      setCurrentStudentState(current);
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError.message || "切换失败");
+    } finally {
+      setSwitchingStudentId(null);
     }
   };
+
+  const getInitial = (name?: string) => {
+    const normalizedName = name?.trim();
+    return normalizedName ? normalizedName.charAt(0) : "?";
+  };
+
+  const currentStudentName = currentStudent?.name?.trim() || "未选择";
+  const currentStudentGrade = currentStudent?.grade?.trim() || "请先设为当前孩子";
 
   if (loading) {
     return (
@@ -198,11 +211,28 @@ export default function DashboardPage() {
         </div>
       )}
 
+      <section className="dashboard-grid" aria-label="孩子管理概览">
+        <div className="panel">
+          <span>孩子数量</span>
+          <strong>{students.length}</strong>
+        </div>
+        <div className="panel">
+          <span>当前孩子</span>
+          <strong>{currentStudentName}</strong>
+        </div>
+        <div className="panel">
+          <span>当前状态</span>
+          <strong className={currentStudent ? "status-active" : ""}>
+            {currentStudent ? "可开始管理" : "待选择"}
+          </strong>
+        </div>
+      </section>
+
       {currentStudent && (
         <div className="current-student-badge">
           <div className="current-student-info">
             <div className="current-student-icon">
-              {currentStudent.name.charAt(0)}
+              {getInitial(currentStudent.name)}
             </div>
             <div className="current-student-text">
               <span className="current-student-label">当前孩子</span>
@@ -210,10 +240,17 @@ export default function DashboardPage() {
                 {currentStudent.name}
               </span>
               <span className="current-student-grade">
-                {currentStudent.grade}
+                {currentStudentGrade}
               </span>
             </div>
           </div>
+        </div>
+      )}
+
+      {!currentStudent && students.length > 0 && (
+        <div className="empty-current-student">
+          <strong>还没有当前孩子</strong>
+          <span>请在下方列表里选择一个孩子作为当前孩子。</span>
         </div>
       )}
 
@@ -240,7 +277,7 @@ export default function DashboardPage() {
               >
                 <div className="student-info">
                   <div className="student-avatar">
-                    {student.name.charAt(0)}
+                    {getInitial(student.name)}
                   </div>
                   <div className="student-details">
                     <div>
@@ -256,9 +293,10 @@ export default function DashboardPage() {
                   {!student.is_current && (
                     <button
                       onClick={() => handleSetCurrent(student.id)}
+                      disabled={switchingStudentId !== null}
                       className="action-button success"
                     >
-                      设为当前
+                      {switchingStudentId === student.id ? "切换中..." : "设为当前"}
                     </button>
                   )}
                   <button

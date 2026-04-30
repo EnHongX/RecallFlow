@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { login, type ApiError } from "@/lib/api";
@@ -12,20 +12,12 @@ export default function LoginPage() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const registered = searchParams.get("registered");
-    if (registered === "1") {
-      setSuccess("注册成功，请登录");
-    }
-  }, [searchParams]);
+  const success = searchParams.get("registered") === "1" ? "注册成功，请登录" : "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
 
     if (!phone || !password) {
       setError("请输入手机号和密码");

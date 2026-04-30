@@ -1,9 +1,9 @@
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5005";
 
 export interface ApiError {
-  success: boolean;
   code: string;
   message: string;
+  details?: Record<string, unknown>;
 }
 
 export interface User {
@@ -24,6 +24,16 @@ export interface SuccessResponse {
   message: string;
 }
 
+interface ApiErrorResponse {
+  error?: {
+    code?: string;
+    message?: string;
+    details?: Record<string, unknown>;
+  };
+  code?: string;
+  message?: string;
+}
+
 async function fetchApi<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -37,10 +47,15 @@ async function fetchApi<T>(
     credentials: "include",
   });
 
-  const data = await response.json();
+  const data = (await response.json()) as ApiErrorResponse | T;
 
   if (!response.ok) {
-    throw data as ApiError;
+    const errorData = data as ApiErrorResponse;
+    throw {
+      code: errorData.error?.code ?? errorData.code ?? `HTTP_${response.status}`,
+      message: errorData.error?.message ?? errorData.message ?? "请求失败",
+      details: errorData.error?.details,
+    } as ApiError;
   }
 
   return data as T;
