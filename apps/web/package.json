@@ -6,7 +6,7 @@
     "dev": "next dev --hostname 127.0.0.1 --port 5001",
     "build": "next build",
     "start": "next start --hostname 127.0.0.1 --port 5001",
-    "lint": "next lint",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
