@@ -4,6 +4,8 @@ node_modules/
 dist/
 build/
 .venv/
+venv/
+apps/api/venv/
 __pycache__/
 *.pyc
 .pytest_cache/

@@ -1,5 +1,6 @@
-from pydantic import BaseModel, field_validator
 import re
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class RegisterRequest(BaseModel):
@@ -29,14 +30,17 @@ class UserResponse(BaseModel):
     phone: str
     display_name: str | None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ErrorBody(BaseModel):
+    code: str
+    message: str
+    details: dict = Field(default_factory=dict)
 
 
 class ErrorResponse(BaseModel):
-    success: bool = False
-    code: str
-    message: str
+    error: ErrorBody
 
 
 class SuccessResponse(BaseModel):
