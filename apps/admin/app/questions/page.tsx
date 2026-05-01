@@ -10,6 +10,7 @@ import {
   createQuestion,
   updateQuestion,
   deleteQuestion,
+  restoreQuestion,
   type Subject,
   type Question,
   type QuestionCreate,
@@ -19,6 +20,8 @@ import {
   type ApiError,
 } from "@/lib/api";
 import "../styles.css";
+
+type ViewMode = "list" | "add" | "edit" | "detail";
 
 const TYPE_OPTIONS = [
   { value: "single_choice", label: "单选题" },
@@ -32,12 +35,12 @@ const TYPE_OPTIONS = [
 const GRADING_METHOD_OPTIONS = [
   { value: "manual", label: "手动判分" },
   { value: "auto", label: "自动判分" },
-  { value: "ai", label: "全部" },
+  { value: "ai", label: "AI判分" },
 ];
 
 const STATUS_OPTIONS = [
   { value: "active", label: "启用" },
-  { value: "archived", label: "已删除" },
+  { value: "archived", label: "已归档" },
   { value: "", label: "全部" },
 ];
 
@@ -66,13 +69,12 @@ export default function QuestionsPage() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<QuestionFilter>({});
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
+
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [detailQuestion, setDetailQuestion] = useState<Question | null>(null);
   const [formLoading, setFormLoading] = useState(false);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [processingId, setProcessingId] = useState<number | null>(null);
 
   const [formSubjectId, setFormSubjectId] = useState<number>(0);
   const [formType, setFormType] = useState("single_choice");
@@ -118,8 +120,10 @@ export default function QuestionsPage() {
   }, [fetchSubjects]);
 
   useEffect(() => {
-    fetchQuestions();
-  }, [fetchQuestions]);
+    if (viewMode === "list") {
+      fetchQuestions();
+    }
+  }, [viewMode, fetchQuestions]);
 
   const resetForm = () => {
     setFormSubjectId(subjects[0]?.id || 0);
@@ -137,7 +141,7 @@ export default function QuestionsPage() {
 
   const handleAddQuestion = () => {
     resetForm();
-    setShowAddModal(true);
+    setViewMode("add");
   };
 
   const handleEditQuestion = (question: Question) => {
@@ -153,18 +157,25 @@ export default function QuestionsPage() {
     setFormTags(question.tags || "");
     setFormGradingMethod(question.grading_method);
     setFormStudentId(question.student_id);
-    setShowEditModal(true);
+    setViewMode("edit");
   };
 
   const handleViewQuestion = async (question: Question) => {
     try {
       const data = await getQuestion(question.id);
       setDetailQuestion(data);
-      setShowDetailModal(true);
+      setViewMode("detail");
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError.message || "获取题目详情失败");
     }
+  };
+
+  const handleBackToList = () => {
+    setViewMode("list");
+    setEditingQuestion(null);
+    setDetailQuestion(null);
+    resetForm();
   };
 
   const handleSubmitAdd = async (e: React.FormEvent) => {
@@ -194,8 +205,7 @@ export default function QuestionsPage() {
         student_id: formStudentId,
       };
       await createQuestion(data);
-      setShowAddModal(false);
-      await fetchQuestions();
+      handleBackToList();
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError.message || "添加失败");
@@ -228,9 +238,7 @@ export default function QuestionsPage() {
         student_id: formStudentId,
       };
       await updateQuestion(editingQuestion.id, data);
-      setShowEditModal(false);
-      setEditingQuestion(null);
-      await fetchQuestions();
+      handleBackToList();
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError.message || "更新失败");
@@ -239,17 +247,31 @@ export default function QuestionsPage() {
     }
   };
 
-  const handleDeleteQuestion = async (questionId: number) => {
-    if (!confirm("确定要删除这个题目吗？")) return;
-    setDeletingId(questionId);
+  const handleArchiveQuestion = async (questionId: number) => {
+    if (!confirm("确定要归档这个题目吗？归档后可以通过筛选查看和恢复。")) return;
+    setProcessingId(questionId);
     try {
       await deleteQuestion(questionId);
       await fetchQuestions();
     } catch (err) {
       const apiError = err as ApiError;
-      setError(apiError.message || "删除失败");
+      setError(apiError.message || "归档失败");
     } finally {
-      setDeletingId(null);
+      setProcessingId(null);
+    }
+  };
+
+  const handleRestoreQuestion = async (questionId: number) => {
+    if (!confirm("确定要恢复这个题目吗？")) return;
+    setProcessingId(questionId);
+    try {
+      await restoreQuestion(questionId);
+      await fetchQuestions();
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError(apiError.message || "恢复失败");
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -282,13 +304,22 @@ export default function QuestionsPage() {
     return option?.label || difficulty;
   };
 
-  return (
-    <AdminLayout title="题库管理">
-      <div className="page-header">
-        <h1 className="page-title">题库管理</h1>
-        <p className="page-subtitle">管理题目库，支持按条件筛选和关键词搜索</p>
-      </div>
+  const getStatusLabel = (status: string) => {
+    return status === "active" ? "启用" : "已归档";
+  };
 
+  const renderList = () => {
+    if (viewMode === "add" || viewMode === "edit") {
+      return renderForm();
+    }
+    if (viewMode === "detail") {
+      return renderDetail();
+    }
+    return renderListTable();
+  };
+
+  const renderListTable = () => (
+    <>
       <div className="filter-bar">
         <div className="filter-row">
           <div className="filter-item">
@@ -343,7 +374,7 @@ export default function QuestionsPage() {
               }
             >
               <option value="">全部</option>
-              {GRADING_METHOD_OPTIONS.filter((o) => o.value).map((option) => (
+              {GRADING_METHOD_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -474,7 +505,7 @@ export default function QuestionsPage() {
                   <td>{question.student_name || "-"}</td>
                   <td>
                     <span className={`status-badge ${question.status}`}>
-                      {question.status === "active" ? "启用" : "已删除"}
+                      {getStatusLabel(question.status)}
                     </span>
                   </td>
                   <td>
@@ -491,13 +522,21 @@ export default function QuestionsPage() {
                       >
                         编辑
                       </button>
-                      {question.status === "active" && (
+                      {question.status === "active" ? (
                         <button
-                          onClick={() => handleDeleteQuestion(question.id)}
-                          disabled={deletingId === question.id}
-                          className="table-action-button delete"
+                          onClick={() => handleArchiveQuestion(question.id)}
+                          disabled={processingId === question.id}
+                          className="table-action-button archive"
                         >
-                          {deletingId === question.id ? "删除中..." : "删除"}
+                          {processingId === question.id ? "处理中..." : "归档"}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleRestoreQuestion(question.id)}
+                          disabled={processingId === question.id}
+                          className="table-action-button restore"
+                        >
+                          {processingId === question.id ? "处理中..." : "恢复"}
                         </button>
                       )}
                     </div>
@@ -508,492 +547,357 @@ export default function QuestionsPage() {
           </table>
         )}
       </div>
+    </>
+  );
 
-      {showAddModal && (
-        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
-          <div
-          className="modal-card"
-          onClick={(e) => e.stopPropagation()}
-          style={{ maxWidth: "720px" }}
-        >
-            <h2 className="modal-title">新增题目</h2>
-            <form onSubmit={handleSubmitAdd} className="modal-form">
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">学科 *</label>
-                  <select
-                    className="select-input"
-                    value={formSubjectId}
-                    onChange={(e) => setFormSubjectId(Number(e.target.value))}
-                    required
-                  >
-                    <option value={0}>请选择学科</option>
-                    {subjects.map((subject) => (
-                      <option key={subject.id} value={subject.id}>
-                        {subject.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">题型 *</label>
-                  <select
-                    className="select-input"
-                    value={formType}
-                    onChange={(e) => setFormType(e.target.value)}
-                    required
-                  >
-                    {TYPE_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+  const renderForm = () => (
+    <div className="form-container">
+      <div className="form-header">
+        <h2 className="form-title">
+          {viewMode === "add" ? "新增题目" : "编辑题目"}
+        </h2>
+        <button onClick={handleBackToList} className="form-back-button">
+          ← 返回列表
+        </button>
+      </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">难度</label>
-                  <select
-                    className="select-input"
-                    value={formDifficulty}
-                    onChange={(e) => setFormDifficulty(e.target.value)}
-                  >
-                    {DIFFICULTY_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">判分方式</label>
-                  <select
-                    className="select-input"
-                    value={formGradingMethod}
-                    onChange={(e) => setFormGradingMethod(e.target.value)}
-                  >
-                    {GRADING_METHOD_OPTIONS.filter((o) => o.value).map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">绑定孩子</label>
-                <select
-                  className="select-input"
-                  value={formStudentId ?? ""}
-                  onChange={(e) =>
-                    setFormStudentId(e.target.value ? Number(e.target.value) : null)
-                  }
-                >
-                  <option value="">不绑定（通用）</option>
-                  {students.map((student: Student) => (
-                    <option key={student.id} value={student.id}>
-                      {student.name} ({student.grade})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">题干 *</label>
-                <textarea
-                  className="form-textarea"
-                  value={formPrompt}
-                  onChange={(e) => setFormPrompt(e.target.value)}
-                  placeholder="请输入题目内容"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">答案 *</label>
-                <textarea
-                  className="form-textarea"
-                  value={formAnswer}
-                  onChange={(e) => setFormAnswer(e.target.value)}
-                  placeholder="请输入参考答案"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">解析</label>
-                <textarea
-                  className="form-textarea"
-                  value={formExplanation}
-                  onChange={(e) => setFormExplanation(e.target.value)}
-                  placeholder="请输入题目解析（家长视角）"
-                />
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">孩子易懂版解析</label>
-                  <textarea
-                    className="form-textarea"
-                    style={{ minHeight: "80px" }}
-                    value={formChildExplanation}
-                    onChange={(e) => setFormChildExplanation(e.target.value)}
-                    placeholder="适合孩子理解的简单解释"
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">趣味提示</label>
-                  <textarea
-                    className="form-textarea"
-                    style={{ minHeight: "80px" }}
-                    value={formFunHint}
-                    onChange={(e) => setFormFunHint(e.target.value)}
-                    placeholder="帮助记忆的趣味提示或口诀"
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">标签</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={formTags}
-                  onChange={(e) => setFormTags(e.target.value)}
-                  placeholder="多个标签用逗号分隔，如：数学,代数,方程"
-                />
-              </div>
-
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="cancel-button"
-                >
-                  取消
-                </button>
-                <button
-                  type="submit"
-                  disabled={formLoading}
-                  className="submit-button"
-                >
-                  {formLoading ? "添加中..." : "添加"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showEditModal && editingQuestion && (
-        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-          <div
-          className="modal-card"
-          onClick={(e) => e.stopPropagation()}
-          style={{ maxWidth: "720px" }}
-        >
-            <h2 className="modal-title">编辑题目</h2>
-            <form onSubmit={handleSubmitEdit} className="modal-form">
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">学科 *</label>
-                  <select
-                    className="select-input"
-                    value={formSubjectId}
-                    onChange={(e) => setFormSubjectId(Number(e.target.value))}
-                    required
-                  >
-                    <option value={0}>请选择学科</option>
-                    {subjects.map((subject) => (
-                      <option key={subject.id} value={subject.id}>
-                        {subject.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">题型 *</label>
-                  <select
-                    className="select-input"
-                    value={formType}
-                    onChange={(e) => setFormType(e.target.value)}
-                    required
-                  >
-                    {TYPE_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">难度</label>
-                  <select
-                    className="select-input"
-                    value={formDifficulty}
-                    onChange={(e) => setFormDifficulty(e.target.value)}
-                  >
-                    {DIFFICULTY_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">判分方式</label>
-                  <select
-                    className="select-input"
-                    value={formGradingMethod}
-                    onChange={(e) => setFormGradingMethod(e.target.value)}
-                  >
-                    {GRADING_METHOD_OPTIONS.filter((o) => o.value).map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">绑定孩子</label>
-                <select
-                  className="select-input"
-                  value={formStudentId ?? ""}
-                  onChange={(e) =>
-                    setFormStudentId(e.target.value ? Number(e.target.value) : null)
-                  }
-                >
-                  <option value="">不绑定（通用）</option>
-                  {students.map((student: Student) => (
-                    <option key={student.id} value={student.id}>
-                      {student.name} ({student.grade})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">状态</label>
-                <select
-                  className="select-input"
-                  value={editingQuestion.status}
-                  disabled
-                >
-                  <option value="active">启用</option>
-                  <option value="archived">已删除</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">题干 *</label>
-                <textarea
-                  className="form-textarea"
-                  value={formPrompt}
-                  onChange={(e) => setFormPrompt(e.target.value)}
-                  placeholder="请输入题目内容"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">答案 *</label>
-                <textarea
-                  className="form-textarea"
-                  value={formAnswer}
-                  onChange={(e) => setFormAnswer(e.target.value)}
-                  placeholder="请输入参考答案"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">解析</label>
-                <textarea
-                  className="form-textarea"
-                  value={formExplanation}
-                  onChange={(e) => setFormExplanation(e.target.value)}
-                  placeholder="请输入题目解析（家长视角）"
-                />
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">孩子易懂版解析</label>
-                  <textarea
-                    className="form-textarea"
-                    style={{ minHeight: "80px" }}
-                    value={formChildExplanation}
-                    onChange={(e) => setFormChildExplanation(e.target.value)}
-                    placeholder="适合孩子理解的简单解释"
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">趣味提示</label>
-                  <textarea
-                    className="form-textarea"
-                    style={{ minHeight: "80px" }}
-                    value={formFunHint}
-                    onChange={(e) => setFormFunHint(e.target.value)}
-                    placeholder="帮助记忆的趣味提示或口诀"
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">标签</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={formTags}
-                  onChange={(e) => setFormTags(e.target.value)}
-                  placeholder="多个标签用逗号分隔，如：数学,代数,方程"
-                />
-              </div>
-
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="cancel-button"
-                >
-                  取消
-                </button>
-                <button
-                  type="submit"
-                  disabled={formLoading}
-                  className="submit-button"
-                >
-                  {formLoading ? "保存中..." : "保存"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showDetailModal && detailQuestion && (
-        <div className="modal-overlay" onClick={() => setShowDetailModal(false)}>
-          <div
-          className="modal-card question-detail-modal"
-          onClick={(e) => e.stopPropagation()}
-        >
-            <h2 className="modal-title">题目详情</h2>
-
-            <div className="question-detail-meta">
-              <div className="question-detail-meta-item">
-                <div className="question-detail-meta-label">学科</div>
-                <div className="question-detail-meta-value">
-                  {getSubjectName(detailQuestion.subject_id)}
-                </div>
-              </div>
-              <div className="question-detail-meta-item">
-                <div className="question-detail-meta-label">题型</div>
-                <div className="question-detail-meta-value">
-                  {getTypeLabel(detailQuestion.type)}
-                </div>
-              </div>
-              <div className="question-detail-meta-item">
-                <div className="question-detail-meta-label">难度</div>
-                <div className="question-detail-meta-value">
-                  {getDifficultyLabel(detailQuestion.difficulty)}
-                </div>
-              </div>
-              <div className="question-detail-meta-item">
-                <div className="question-detail-meta-label">判分方式</div>
-                <div className="question-detail-meta-value">
-                  {getGradingMethodLabel(detailQuestion.grading_method)}
-                </div>
-              </div>
-              <div className="question-detail-meta-item">
-                <div className="question-detail-meta-label">绑定孩子</div>
-                <div className="question-detail-meta-value">
-                  {detailQuestion.student_name || "未绑定"}
-                </div>
-              </div>
-              <div className="question-detail-meta-item">
-                <div className="question-detail-meta-label">状态</div>
-                <div className="question-detail-meta-value">
-                  <span className={`status-badge ${detailQuestion.status}`}>
-                    {detailQuestion.status === "active" ? "启用" : "已删除"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {detailQuestion.tags && (
-              <div className="question-detail-section">
-                <div className="question-detail-label">标签</div>
-                <div>
-                  {parseTags(detailQuestion.tags).map((tag, index) => (
-                    <span key={index} className="tag-badge">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="question-detail-section">
-              <div className="question-detail-label">题干</div>
-              <div className="question-detail-content">
-                {detailQuestion.prompt}
-              </div>
-            </div>
-
-            <div className="question-detail-section">
-              <div className="question-detail-label">答案</div>
-              <div className="question-detail-content">
-                {detailQuestion.answer}
-              </div>
-            </div>
-
-            {detailQuestion.explanation && (
-              <div className="question-detail-section">
-                <div className="question-detail-label">解析</div>
-                <div className="question-detail-content">
-                  {detailQuestion.explanation}
-                </div>
-              </div>
-            )}
-
-            {detailQuestion.child_explanation && (
-              <div className="question-detail-section">
-                <div className="question-detail-label">孩子易懂版解析</div>
-                <div className="question-detail-content">
-                  {detailQuestion.child_explanation}
-                </div>
-              </div>
-            )}
-
-            {detailQuestion.fun_hint && (
-              <div className="question-detail-section">
-                <div className="question-detail-label">趣味提示</div>
-                <div className="question-detail-content">
-                  {detailQuestion.fun_hint}
-                </div>
-              </div>
-            )}
-
-            <div className="modal-actions">
-              <button
-                type="button"
-                onClick={() => setShowDetailModal(false)}
-                className="cancel-button"
+      <form onSubmit={viewMode === "add" ? handleSubmitAdd : handleSubmitEdit} className="modal-form">
+        <div className="form-section">
+          <h3 className="form-section-title">基本信息</h3>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">学科 *</label>
+              <select
+                className="select-input"
+                value={formSubjectId}
+                onChange={(e) => setFormSubjectId(Number(e.target.value))}
+                required
               >
-                关闭
-              </button>
+                <option value={0}>请选择学科</option>
+                {subjects.map((subject) => (
+                  <option key={subject.id} value={subject.id}>
+                    {subject.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">题型 *</label>
+              <select
+                className="select-input"
+                value={formType}
+                onChange={(e) => setFormType(e.target.value)}
+                required
+              >
+                {TYPE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">难度</label>
+              <select
+                className="select-input"
+                value={formDifficulty}
+                onChange={(e) => setFormDifficulty(e.target.value)}
+              >
+                {DIFFICULTY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">判分方式</label>
+              <select
+                className="select-input"
+                value={formGradingMethod}
+                onChange={(e) => setFormGradingMethod(e.target.value)}
+              >
+                {GRADING_METHOD_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">绑定孩子</label>
+            <select
+              className="select-input"
+              value={formStudentId ?? ""}
+              onChange={(e) =>
+                setFormStudentId(e.target.value ? Number(e.target.value) : null)
+              }
+            >
+              <option value="">不绑定（通用题目）</option>
+              {students.map((student: Student) => (
+                <option key={student.id} value={student.id}>
+                  {student.name} ({student.grade})
+                </option>
+              ))}
+            </select>
+            <p className="form-help-text">
+              绑定到特定孩子的题目，只有该孩子可以看到。不绑定则所有孩子都能使用
+            </p>
+          </div>
+
+          {viewMode === "edit" && editingQuestion && (
+            <div className="form-group">
+              <label className="form-label">当前状态</label>
+              <select
+                className="select-input"
+                value={editingQuestion.status}
+                disabled
+              >
+                <option value="active">启用</option>
+                <option value="archived">已归档</option>
+              </select>
+            </div>
+          )}
+        </div>
+
+        <div className="form-section">
+          <h3 className="form-section-title">题目内容</h3>
+          <div className="form-group">
+            <label className="form-label">题干 *</label>
+            <textarea
+              className="form-textarea"
+              value={formPrompt}
+              onChange={(e) => setFormPrompt(e.target.value)}
+              placeholder="请输入题目内容，例如：2 + 3 = ?"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">答案 *</label>
+            <textarea
+              className="form-textarea"
+              value={formAnswer}
+              onChange={(e) => setFormAnswer(e.target.value)}
+              placeholder="请输入参考答案"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">解析（家长视角）</label>
+            <textarea
+              className="form-textarea"
+              value={formExplanation}
+              onChange={(e) => setFormExplanation(e.target.value)}
+              placeholder="请输入题目解析，用家长能够理解的详细解释"
+            />
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h3 className="form-section-title">孩子专属内容</h3>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">孩子易懂版解析</label>
+              <textarea
+                className="form-textarea"
+                style={{ minHeight: "100px" }}
+                value={formChildExplanation}
+                onChange={(e) => setFormChildExplanation(e.target.value)}
+                placeholder="用孩子能听懂的话来解释这道题"
+              />
+              <p className="form-help-text">
+                用简单、有趣的语言解释给孩子听的解析，帮助孩子更容易理解
+              </p>
+            </div>
+            <div className="form-group">
+              <label className="form-label">趣味提示</label>
+              <textarea
+                className="form-textarea"
+                style={{ minHeight: "100px" }}
+                value={formFunHint}
+                onChange={(e) => setFormFunHint(e.target.value)}
+                placeholder="帮助记忆的趣味提示、口诀或小故事"
+              />
+              <p className="form-help-text">
+                有趣的记忆技巧、提示或小故事，帮助孩子记住解题方法
+              </p>
             </div>
           </div>
         </div>
-      )}
+
+        <div className="form-section">
+          <h3 className="form-section-title">其他信息</h3>
+          <div className="form-group">
+            <label className="form-label">标签</label>
+            <input
+              type="text"
+              className="form-input"
+              value={formTags}
+              onChange={(e) => setFormTags(e.target.value)}
+              placeholder="多个标签用逗号分隔，如：数学,代数,一元一次方程"
+            />
+            <p className="form-help-text">
+              标签用于分类和搜索题目，方便后续查找
+            </p>
+          </div>
+        </div>
+
+        <div className="form-footer">
+          <button
+            type="button"
+            onClick={handleBackToList}
+            className="cancel-button"
+          >
+            取消
+          </button>
+          <button
+            type="submit"
+            disabled={formLoading}
+            className="submit-button"
+          >
+            {formLoading
+              ? (viewMode === "add" ? "添加中..." : "保存中...")
+              : (viewMode === "add" ? "添加题目" : "保存修改")}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+
+  const renderDetail = () => {
+    if (!detailQuestion) return null;
+
+    return (
+      <div className="form-container">
+        <div className="form-header">
+          <h2 className="form-title">题目详情</h2>
+          <button onClick={handleBackToList} className="form-back-button">
+            ← 返回列表
+          </button>
+        </div>
+
+        <div className="question-detail-meta">
+          <div className="question-detail-meta-item">
+            <div className="question-detail-meta-label">学科</div>
+            <div className="question-detail-meta-value">
+              {getSubjectName(detailQuestion.subject_id)}
+            </div>
+          </div>
+          <div className="question-detail-meta-item">
+            <div className="question-detail-meta-label">题型</div>
+            <div className="question-detail-meta-value">
+              {getTypeLabel(detailQuestion.type)}
+            </div>
+          </div>
+          <div className="question-detail-meta-item">
+            <div className="question-detail-meta-label">难度</div>
+            <div className="question-detail-meta-value">
+              {getDifficultyLabel(detailQuestion.difficulty)}
+            </div>
+          </div>
+          <div className="question-detail-meta-item">
+            <div className="question-detail-meta-label">判分方式</div>
+            <div className="question-detail-meta-value">
+              {getGradingMethodLabel(detailQuestion.grading_method)}
+            </div>
+          </div>
+          <div className="question-detail-meta-item">
+            <div className="question-detail-meta-label">绑定孩子</div>
+            <div className="question-detail-meta-value">
+              {detailQuestion.student_name || "未绑定（通用题目）"}
+            </div>
+          </div>
+          <div className="question-detail-meta-item">
+            <div className="question-detail-meta-label">状态</div>
+            <div className="question-detail-meta-value">
+              <span className={`status-badge ${detailQuestion.status}`}>
+                {getStatusLabel(detailQuestion.status)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {detailQuestion.tags && (
+          <div className="question-detail-section">
+            <div className="question-detail-label">标签</div>
+            <div>
+              {parseTags(detailQuestion.tags).map((tag, index) => (
+                <span key={index} className="tag-badge">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="question-detail-section">
+          <div className="question-detail-label">题干</div>
+          <div className="question-detail-content">
+            {detailQuestion.prompt}
+          </div>
+        </div>
+
+        <div className="question-detail-section">
+          <div className="question-detail-label">答案</div>
+          <div className="question-detail-content">
+            {detailQuestion.answer}
+          </div>
+        </div>
+
+        {detailQuestion.explanation && (
+          <div className="question-detail-section">
+            <div className="question-detail-label">解析（家长视角）</div>
+            <div className="question-detail-content">
+              {detailQuestion.explanation}
+            </div>
+          </div>
+        )}
+
+        {detailQuestion.child_explanation && (
+          <div className="question-detail-section">
+            <div className="question-detail-label">孩子易懂版解析</div>
+            <div className="question-detail-content">
+              {detailQuestion.child_explanation}
+            </div>
+          </div>
+        )}
+
+        {detailQuestion.fun_hint && (
+          <div className="question-detail-section">
+            <div className="question-detail-label">趣味提示</div>
+            <div className="question-detail-content">
+              {detailQuestion.fun_hint}
+            </div>
+          </div>
+        )}
+
+        <div className="form-footer">
+          <button
+            onClick={() => handleEditQuestion(detailQuestion)}
+            className="submit-button"
+          >
+            编辑此题目
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <AdminLayout title="题库管理">
+      <div className="page-header">
+        <h1 className="page-title">题库管理</h1>
+        <p className="page-subtitle">管理题目库，支持按条件筛选和关键词搜索</p>
+      </div>
+
+      {renderList()}
     </AdminLayout>
   );
 }
