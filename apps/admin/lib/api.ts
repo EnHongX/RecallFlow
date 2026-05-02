@@ -317,3 +317,61 @@ export async function deleteCard(cardId: number): Promise<SuccessResponse> {
     method: "DELETE",
   });
 }
+
+export async function submitCardPractice(cardId: number, result: "gotit" | "again"): Promise<Card> {
+  return fetchApi<Card>(`/api/v1/cards/${cardId}/submit`, {
+    method: "POST",
+    body: JSON.stringify({ result }),
+  });
+}
+
+export interface PracticeRecord {
+  id: number;
+  student_id: number;
+  card_id: number;
+  result: string;
+  submitted_at: string;
+  student_name?: string | null;
+  card_front?: string | null;
+  card_back?: string | null;
+}
+
+export async function getPracticeRecords(studentId?: number, limit?: number): Promise<PracticeRecord[]> {
+  const params = new URLSearchParams();
+  if (studentId !== undefined) params.append("student_id", studentId.toString());
+  if (limit !== undefined) params.append("limit", limit.toString());
+  const queryString = params.toString();
+  const url = queryString ? `/api/v1/practice-records?${queryString}` : "/api/v1/practice-records";
+  return fetchApi<PracticeRecord[]>(url, {
+    method: "GET",
+  });
+}
+
+export interface WrongCard {
+  id: number;
+  student_id: number;
+  card_id: number;
+  is_mastered: boolean;
+  mastered_at: string | null;
+  student_name?: string | null;
+  card_front?: string | null;
+  card_back?: string | null;
+  card_status?: string | null;
+}
+
+export async function getWrongCards(studentId?: number, isMastered?: boolean): Promise<WrongCard[]> {
+  const params = new URLSearchParams();
+  if (studentId !== undefined) params.append("student_id", studentId.toString());
+  if (isMastered !== undefined) params.append("is_mastered", isMastered.toString());
+  const queryString = params.toString();
+  const url = queryString ? `/api/v1/wrong-cards?${queryString}` : "/api/v1/wrong-cards";
+  return fetchApi<WrongCard[]>(url, {
+    method: "GET",
+  });
+}
+
+export async function markWrongCardAsMastered(wrongCardId: number): Promise<SuccessResponse> {
+  return fetchApi<SuccessResponse>(`/api/v1/wrong-cards/${wrongCardId}/master`, {
+    method: "POST",
+  });
+}

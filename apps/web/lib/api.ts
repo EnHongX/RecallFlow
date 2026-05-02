@@ -159,3 +159,10 @@ export async function updateCard(cardId: number, data: CardUpdate): Promise<Card
     body: JSON.stringify(data),
   });
 }
+
+export async function submitCardPractice(cardId: number, result: "gotit" | "again"): Promise<Card> {
+  return fetchApi<Card>(`/api/v1/cards/${cardId}/submit`, {
+    method: "POST",
+    body: JSON.stringify({ result }),
+  });
+}

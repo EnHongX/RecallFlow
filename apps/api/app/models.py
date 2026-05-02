@@ -100,3 +100,31 @@ class Card(TimestampMixin, Base):
     next_review_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     student: Mapped["Student"] = relationship(back_populates="cards")
+    practice_records: Mapped[list["PracticeRecord"]] = relationship(back_populates="card")
+    wrong_card: Mapped["WrongCard | None"] = relationship(back_populates="card")
+
+
+class PracticeRecord(TimestampMixin, Base):
+    __tablename__ = "practice_records"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), index=True)
+    card_id: Mapped[int] = mapped_column(ForeignKey("cards.id", ondelete="CASCADE"), index=True)
+    result: Mapped[str] = mapped_column(String(20))
+    submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    student: Mapped["Student"] = relationship()
+    card: Mapped["Card"] = relationship(back_populates="practice_records")
+
+
+class WrongCard(TimestampMixin, Base):
+    __tablename__ = "wrong_cards"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), index=True)
+    card_id: Mapped[int] = mapped_column(ForeignKey("cards.id", ondelete="CASCADE"), unique=True, index=True)
+    is_mastered: Mapped[bool] = mapped_column(Boolean, default=False)
+    mastered_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    student: Mapped["Student"] = relationship()
+    card: Mapped["Card"] = relationship(back_populates="wrong_card")
