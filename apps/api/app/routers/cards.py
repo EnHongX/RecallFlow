@@ -1,0 +1,257 @@
+from typing import Sequence, Optional
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+from app.deps import get_current_user
+from app.models import Card, User, Student, Question
+from app.schemas import (
+    ErrorResponse,
+    CardCreate,
+    CardResponse,
+    CardUpdate,
+    SuccessResponse,
+)
+
+router = APIRouter(prefix="/api/v1/cards", tags=["cards"])
+
+
+@router.get(
+    "",
+    response_model=list[CardResponse],
+    responses={
+        401: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+    }
+)
+def get_cards(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    student_id: Optional[int] = Query(None),
+    status: Optional[str] = Query(None),
+) -> Sequence[Card]:
+    query = select(Card).join(Student).where(Student.user_id == current_user.id)
+    
+    if student_id is not None:
+        query = query.where(Card.student_id == student_id)
+    if status is not None:
+        query = query.where(Card.status == status)
+    
+    query = query.order_by(Card.created_at.desc())
+    
+    cards = db.execute(query).scalars().all()
+    
+    for card in cards:
+        if card.student_id:
+            student = db.execute(
+                select(Student).where(Student.id == card.student_id)
+            ).scalar_one_or_none()
+            if student:
+                card.student_name = student.name
+        
+        if card.question_id:
+            question = db.execute(
+                select(Question).where(Question.id == card.question_id)
+            ).scalar_one_or_none()
+            if question:
+                card.question_prompt = question.prompt
+    
+    return cards
+
+
+@router.get(
+    "/{card_id}",
+    response_model=CardResponse,
+    responses={
+        401: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+    }
+)
+def get_card(
+    card_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Card:
+    card = db.execute(
+        select(Card)
+        .join(Student)
+        .where(
+            Card.id == card_id,
+            Student.user_id == current_user.id
+        )
+    ).scalar_one_or_none()
+    
+    if not card:
+        from app.errors import api_error
+        raise api_error("COMMON_002")
+    
+    if card.student_id:
+        student = db.execute(
+            select(Student).where(Student.id == card.student_id)
+        ).scalar_one_or_none()
+        if student:
+            card.student_name = student.name
+    
+    if card.question_id:
+        question = db.execute(
+            select(Question).where(Question.id == card.question_id)
+        ).scalar_one_or_none()
+        if question:
+            card.question_prompt = question.prompt
+    
+    return card
+
+
+@router.post(
+    "",
+    response_model=CardResponse,
+    responses={
+        400: {"model": ErrorResponse},
+        401: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+    }
+)
+def create_card(
+    request: CardCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Card:
+    student = db.execute(
+        select(Student).where(
+            Student.id == request.student_id,
+            Student.user_id == current_user.id
+        )
+    ).scalar_one_or_none()
+    if not student:
+        from app.errors import api_error
+        raise api_error("COMMON_002")
+    
+    question = db.execute(
+        select(Question).where(
+            Question.id == request.question_id,
+            Question.user_id == current_user.id
+        )
+    ).scalar_one_or_none()
+    if not question:
+        from app.errors import api_error
+        raise api_error("COMMON_002")
+    
+    existing_card = db.execute(
+        select(Card).where(
+            Card.student_id == request.student_id,
+            Card.question_id == request.question_id
+        )
+    ).scalar_one_or_none()
+    if existing_card:
+        from app.errors import api_error
+        raise api_error("COMMON_001", {"message": "该题目已经为该孩子生成过练习卡片"})
+    
+    new_card = Card(
+        student_id=request.student_id,
+        question_id=request.question_id,
+        card_type="practice",
+        front=question.prompt,
+        back=question.answer,
+        child_explanation=question.child_explanation,
+        fun_hint=question.fun_hint,
+        status="new",
+        grading_method=question.grading_method,
+    )
+    
+    db.add(new_card)
+    db.commit()
+    db.refresh(new_card)
+    
+    new_card.student_name = student.name
+    new_card.question_prompt = question.prompt
+    
+    return new_card
+
+
+@router.put(
+    "/{card_id}",
+    response_model=CardResponse,
+    responses={
+        401: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+    }
+)
+def update_card(
+    card_id: int,
+    request: CardUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Card:
+    card = db.execute(
+        select(Card)
+        .join(Student)
+        .where(
+            Card.id == card_id,
+            Student.user_id == current_user.id
+        )
+    ).scalar_one_or_none()
+    
+    if not card:
+        from app.errors import api_error
+        raise api_error("COMMON_002")
+    
+    update_data = request.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(card, key, value)
+    
+    db.commit()
+    db.refresh(card)
+    
+    if card.student_id:
+        student = db.execute(
+            select(Student).where(Student.id == card.student_id)
+        ).scalar_one_or_none()
+        if student:
+            card.student_name = student.name
+    
+    if card.question_id:
+        question = db.execute(
+            select(Question).where(Question.id == card.question_id)
+        ).scalar_one_or_none()
+        if question:
+            card.question_prompt = question.prompt
+    
+    return card
+
+
+@router.delete(
+    "/{card_id}",
+    response_model=SuccessResponse,
+    responses={
+        401: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+    }
+)
+def delete_card(
+    card_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> SuccessResponse:
+    card = db.execute(
+        select(Card)
+        .join(Student)
+        .where(
+            Card.id == card_id,
+            Student.user_id == current_user.id
+        )
+    ).scalar_one_or_none()
+    
+    if not card:
+        from app.errors import api_error
+        raise api_error("COMMON_002")
+    
+    db.delete(card)
+    db.commit()
+    
+    return SuccessResponse(message="练习卡片已删除")

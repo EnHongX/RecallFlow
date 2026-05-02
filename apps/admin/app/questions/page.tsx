@@ -11,6 +11,7 @@ import {
   updateQuestion,
   deleteQuestion,
   restoreQuestion,
+  createCard,
   type Subject,
   type Question,
   type QuestionCreate,
@@ -87,6 +88,11 @@ export default function QuestionsPage() {
   const [formTags, setFormTags] = useState("");
   const [formGradingMethod, setFormGradingMethod] = useState("manual");
   const [formStudentId, setFormStudentId] = useState<number | null>(null);
+
+  const [showCreateCardModal, setShowCreateCardModal] = useState(false);
+  const [selectedQuestionForCard, setSelectedQuestionForCard] = useState<Question | null>(null);
+  const [selectedStudentForCard, setSelectedStudentForCard] = useState<number | null>(null);
+  const [creatingCard, setCreatingCard] = useState(false);
 
   const fetchSubjects = useCallback(async () => {
     try {
@@ -273,6 +279,43 @@ export default function QuestionsPage() {
     } finally {
       setProcessingId(null);
     }
+  };
+
+  const handleCreateCard = (question: Question) => {
+    setSelectedQuestionForCard(question);
+    setSelectedStudentForCard(currentStudent?.id || null);
+    setShowCreateCardModal(true);
+  };
+
+  const handleSubmitCreateCard = async () => {
+    if (!selectedQuestionForCard || !selectedStudentForCard) {
+      setError("请选择要绑定的孩子");
+      return;
+    }
+    setCreatingCard(true);
+    setError("");
+    try {
+      await createCard({
+        question_id: selectedQuestionForCard.id,
+        student_id: selectedStudentForCard,
+      });
+      setShowCreateCardModal(false);
+      setSelectedQuestionForCard(null);
+      setSelectedStudentForCard(null);
+      alert("练习卡片生成成功！");
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError(apiError.message || "生成卡片失败");
+    } finally {
+      setCreatingCard(false);
+    }
+  };
+
+  const handleCancelCreateCard = () => {
+    setShowCreateCardModal(false);
+    setSelectedQuestionForCard(null);
+    setSelectedStudentForCard(null);
+    setError("");
   };
 
   const handleSearch = () => {
@@ -522,6 +565,15 @@ export default function QuestionsPage() {
                       >
                         编辑
                       </button>
+                      {question.status === "active" && (
+                        <button
+                          onClick={() => handleCreateCard(question)}
+                          className="table-action-button"
+                          style={{ backgroundColor: "#4CAF50", color: "white" }}
+                        >
+                          生成卡片
+                        </button>
+                      )}
                       {question.status === "active" ? (
                         <button
                           onClick={() => handleArchiveQuestion(question.id)}
@@ -547,6 +599,110 @@ export default function QuestionsPage() {
           </table>
         )}
       </div>
+
+      {showCreateCardModal && selectedQuestionForCard && (
+        <div className="modal-overlay" onClick={handleCancelCreateCard}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">生成练习卡片</h3>
+              <button
+                type="button"
+                onClick={handleCancelCreateCard}
+                className="modal-close-button"
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label className="form-label">题目</label>
+                <div
+                  className="form-textarea"
+                  style={{
+                    backgroundColor: "#f5f5f5",
+                    padding: "12px",
+                    borderRadius: "4px",
+                    minHeight: "60px",
+                  }}
+                >
+                  {truncateText(selectedQuestionForCard.prompt, 200)}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">绑定到孩子 *</label>
+                <select
+                  className="select-input"
+                  value={selectedStudentForCard ?? ""}
+                  onChange={(e) =>
+                    setSelectedStudentForCard(
+                      e.target.value ? Number(e.target.value) : null
+                    )
+                  }
+                  required
+                >
+                  <option value="">请选择孩子</option>
+                  {students.map((student: Student) => (
+                    <option key={student.id} value={student.id}>
+                      {student.name} ({student.grade})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">卡片内容预览</label>
+                <div style={{ marginBottom: "12px" }}>
+                  <strong>正面（题干）：</strong>
+                  <p style={{ marginTop: "4px", color: "#666" }}>
+                    {selectedQuestionForCard.prompt}
+                  </p>
+                </div>
+                <div style={{ marginBottom: "12px" }}>
+                  <strong>背面（答案）：</strong>
+                  <p style={{ marginTop: "4px", color: "#666" }}>
+                    {selectedQuestionForCard.answer}
+                  </p>
+                </div>
+                {selectedQuestionForCard.child_explanation && (
+                  <div style={{ marginBottom: "12px" }}>
+                    <strong>孩子易懂版解析：</strong>
+                    <p style={{ marginTop: "4px", color: "#666" }}>
+                      {selectedQuestionForCard.child_explanation}
+                    </p>
+                  </div>
+                )}
+                {selectedQuestionForCard.fun_hint && (
+                  <div>
+                    <strong>趣味提示：</strong>
+                    <p style={{ marginTop: "4px", color: "#666" }}>
+                      {selectedQuestionForCard.fun_hint}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                onClick={handleCancelCreateCard}
+                className="cancel-button"
+                disabled={creatingCard}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitCreateCard}
+                className="submit-button"
+                disabled={creatingCard || !selectedStudentForCard}
+              >
+                {creatingCard ? "生成中..." : "生成卡片"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 

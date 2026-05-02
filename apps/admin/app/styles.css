@@ -1387,3 +1387,60 @@ h1 {
 .hidden {
   display: none !important;
 }
+
+.modal-content {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e0dbcf;
+}
+
+.modal-header .modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #18212b;
+  margin: 0;
+}
+
+.modal-close-button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f6f6f3;
+  border: none;
+  border-radius: 8px;
+  font-size: 20px;
+  color: #5d6670;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-close-button:hover {
+  background: #e0dbcf;
+  color: #18212b;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #e0dbcf;
+}
