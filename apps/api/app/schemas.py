@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -125,5 +126,36 @@ class QuestionResponse(BaseModel):
     status: str
     subject_name: str | None = None
     student_name: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CardCreate(BaseModel):
+    question_id: int
+    student_id: int
+
+
+class CardUpdate(BaseModel):
+    front: str | None = None
+    back: str | None = None
+    child_explanation: str | None = None
+    fun_hint: str | None = None
+    status: str | None = None
+
+
+class CardResponse(BaseModel):
+    id: int
+    student_id: int
+    question_id: int
+    card_type: str
+    front: str
+    back: str
+    child_explanation: str | None
+    fun_hint: str | None
+    status: str
+    grading_method: str
+    next_review_at: datetime | None
+    student_name: str | None = None
+    question_prompt: str | None = None
 
     model_config = ConfigDict(from_attributes=True)

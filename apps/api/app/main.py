@@ -8,7 +8,7 @@ from sqlalchemy import text
 from app.config import get_settings
 from app.database import engine
 from app.errors import build_error
-from app.routers import auth_router, me_router, students_router, subjects_router, questions_router
+from app.routers import auth_router, me_router, students_router, subjects_router, questions_router, cards_router
 
 settings = get_settings()
 
@@ -27,6 +27,7 @@ app.include_router(me_router)
 app.include_router(students_router)
 app.include_router(subjects_router)
 app.include_router(questions_router)
+app.include_router(cards_router)
 
 
 @app.exception_handler(HTTPException)

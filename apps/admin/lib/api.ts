@@ -244,3 +244,76 @@ export async function restoreQuestion(questionId: number): Promise<SuccessRespon
     method: "POST",
   });
 }
+
+export interface Card {
+  id: number;
+  student_id: number;
+  question_id: number;
+  card_type: string;
+  front: string;
+  back: string;
+  child_explanation: string | null;
+  fun_hint: string | null;
+  status: string;
+  grading_method: string;
+  next_review_at: string | null;
+  student_name?: string | null;
+  question_prompt?: string | null;
+}
+
+export interface CardCreate {
+  question_id: number;
+  student_id: number;
+}
+
+export interface CardUpdate {
+  front?: string | null;
+  back?: string | null;
+  child_explanation?: string | null;
+  fun_hint?: string | null;
+  status?: string | null;
+}
+
+export interface CardFilter {
+  student_id?: number;
+  status?: string;
+}
+
+export async function getCards(filter?: CardFilter): Promise<Card[]> {
+  const params = new URLSearchParams();
+  if (filter) {
+    if (filter.student_id !== undefined) params.append("student_id", filter.student_id.toString());
+    if (filter.status) params.append("status", filter.status);
+  }
+  const queryString = params.toString();
+  const url = queryString ? `/api/v1/cards?${queryString}` : "/api/v1/cards";
+  return fetchApi<Card[]>(url, {
+    method: "GET",
+  });
+}
+
+export async function getCard(cardId: number): Promise<Card> {
+  return fetchApi<Card>(`/api/v1/cards/${cardId}`, {
+    method: "GET",
+  });
+}
+
+export async function createCard(data: CardCreate): Promise<Card> {
+  return fetchApi<Card>("/api/v1/cards", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateCard(cardId: number, data: CardUpdate): Promise<Card> {
+  return fetchApi<Card>(`/api/v1/cards/${cardId}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteCard(cardId: number): Promise<SuccessResponse> {
+  return fetchApi<SuccessResponse>(`/api/v1/cards/${cardId}`, {
+    method: "DELETE",
+  });
+}
