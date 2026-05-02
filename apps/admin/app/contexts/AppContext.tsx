@@ -24,7 +24,15 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const protectedPaths = ["/dashboard", "/students", "/questions", "/home"];
+const protectedPaths = [
+  "/dashboard", 
+  "/students", 
+  "/questions", 
+  "/home", 
+  "/cards", 
+  "/practice-records", 
+  "/wrong-cards"
+];
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
