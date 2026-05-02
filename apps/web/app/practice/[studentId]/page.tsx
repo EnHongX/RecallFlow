@@ -381,24 +381,47 @@ export default function StudentPracticePage() {
         </div>
 
         {!showAnswer ? (
-          <div style={{ textAlign: "center", marginTop: "32px" }}>
-            <button
-              onClick={handleShowAnswer}
-              className="action-button primary"
-              style={{ height: "56px", fontSize: "18px", padding: "0 48px" }}
-            >
-              👀 查看答案
-            </button>
-            {currentCard.fun_hint && (
-              <button
-                onClick={handleShowFunHint}
-                className="action-button secondary"
-                style={{ marginLeft: "16px" }}
-              >
-                💡 看个提示
-              </button>
+          <>
+            {showFunHint && currentCard.fun_hint && (
+              <div className="info-card" style={{ marginBottom: "20px" }}>
+                <h2 style={{ margin: 0, fontSize: "18px", marginBottom: "16px" }}>
+                  💡 趣味提示
+                </h2>
+                <div
+                  style={{
+                    fontSize: "15px",
+                    lineHeight: "1.8",
+                    color: "#92400e",
+                    whiteSpace: "pre-wrap",
+                    padding: "16px",
+                    background: "#fffbeb",
+                    borderRadius: "8px",
+                    border: "1px solid #fde68a",
+                  }}
+                >
+                  {currentCard.fun_hint}
+                </div>
+              </div>
             )}
-          </div>
+            <div style={{ textAlign: "center", marginTop: "32px" }}>
+              <button
+                onClick={handleShowAnswer}
+                className="action-button primary"
+                style={{ height: "56px", fontSize: "18px", padding: "0 48px" }}
+              >
+                👀 查看答案
+              </button>
+              {currentCard.fun_hint && !showFunHint && (
+                <button
+                  onClick={handleShowFunHint}
+                  className="action-button secondary"
+                  style={{ marginLeft: "16px" }}
+                >
+                  💡 看个提示
+                </button>
+              )}
+            </div>
+          </>
         ) : (
           <>
             <div className="info-card" style={{ marginBottom: "20px" }}>
