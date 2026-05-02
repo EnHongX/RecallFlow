@@ -1,9 +1,9 @@
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5005";
 
 export interface ApiError {
-  success: boolean;
   code: string;
   message: string;
+  details?: Record<string, unknown>;
 }
 
 export interface User {
@@ -12,9 +12,26 @@ export interface User {
   display_name: string | null;
 }
 
+export interface Student {
+  id: number;
+  name: string;
+  grade: string;
+  is_current: boolean;
+}
+
 export interface SuccessResponse {
   success: boolean;
   message: string;
+}
+
+interface ApiErrorResponse {
+  error?: {
+    code?: string;
+    message?: string;
+    details?: Record<string, unknown>;
+  };
+  code?: string;
+  message?: string;
 }
 
 async function fetchApi<T>(
@@ -30,10 +47,15 @@ async function fetchApi<T>(
     credentials: "include",
   });
 
-  const data = await response.json();
+  const data = (await response.json()) as ApiErrorResponse | T;
 
   if (!response.ok) {
-    throw data as ApiError;
+    const errorData = data as ApiErrorResponse;
+    throw {
+      code: errorData.error?.code ?? errorData.code ?? `HTTP_${response.status}`,
+      message: errorData.error?.message ?? errorData.message ?? "请求失败",
+      details: errorData.error?.details,
+    } as ApiError;
   }
 
   return data as T;
@@ -62,5 +84,78 @@ export async function getCurrentUser(): Promise<User> {
 export async function logout(): Promise<SuccessResponse> {
   return fetchApi<SuccessResponse>("/api/v1/auth/logout", {
     method: "POST",
+  });
+}
+
+export async function getStudents(): Promise<Student[]> {
+  return fetchApi<Student[]>("/api/v1/students", {
+    method: "GET",
+  });
+}
+
+export async function setCurrentStudent(studentId: number): Promise<SuccessResponse> {
+  return fetchApi<SuccessResponse>(`/api/v1/students/${studentId}/set-current`, {
+    method: "POST",
+  });
+}
+
+export async function getCurrentStudent(): Promise<Student | null> {
+  return fetchApi<Student | null>("/api/v1/students/current", {
+    method: "GET",
+  });
+}
+
+export interface Card {
+  id: number;
+  student_id: number;
+  question_id: number;
+  card_type: string;
+  front: string;
+  back: string;
+  child_explanation: string | null;
+  fun_hint: string | null;
+  status: string;
+  grading_method: string;
+  next_review_at: string | null;
+  student_name?: string | null;
+  question_prompt?: string | null;
+}
+
+export interface CardUpdate {
+  front?: string | null;
+  back?: string | null;
+  child_explanation?: string | null;
+  fun_hint?: string | null;
+  status?: string | null;
+}
+
+export interface CardFilter {
+  student_id?: number;
+  status?: string;
+}
+
+export async function getCards(filter?: CardFilter): Promise<Card[]> {
+  const params = new URLSearchParams();
+  if (filter) {
+    if (filter.student_id !== undefined) params.append("student_id", filter.student_id.toString());
+    if (filter.status) params.append("status", filter.status);
+  }
+  const queryString = params.toString();
+  const url = queryString ? `/api/v1/cards?${queryString}` : "/api/v1/cards";
+  return fetchApi<Card[]>(url, {
+    method: "GET",
+  });
+}
+
+export async function getCard(cardId: number): Promise<Card> {
+  return fetchApi<Card>(`/api/v1/cards/${cardId}`, {
+    method: "GET",
+  });
+}
+
+export async function updateCard(cardId: number, data: CardUpdate): Promise<Card> {
+  return fetchApi<Card>(`/api/v1/cards/${cardId}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
   });
 }
