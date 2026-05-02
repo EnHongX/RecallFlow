@@ -7,7 +7,7 @@ import {
   getStudents,
   getCards,
   getCard,
-  updateCard,
+  submitCardPractice,
   type Student,
   type Card,
   type ApiError,
@@ -159,14 +159,7 @@ export default function StudentPracticePage() {
 
     setSubmitting(true);
     try {
-      let newStatus: string;
-      if (result === "gotit") {
-        newStatus = currentCard.status === "new" ? "learning" : currentCard.status === "learning" ? "review" : "mastered";
-      } else {
-        newStatus = currentCard.status === "mastered" ? "review" : "new";
-      }
-
-      await updateCard(currentCard.id, { status: newStatus });
+      await submitCardPractice(currentCard.id, result);
 
       const nextIndex = currentCardIndex + 1;
       if (nextIndex < cards.length) {

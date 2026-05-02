@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Sequence, Optional
 
 from fastapi import APIRouter, Depends, Query
@@ -6,12 +7,13 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_user
-from app.models import Card, User, Student, Question
+from app.models import Card, User, Student, Question, PracticeRecord, WrongCard
 from app.schemas import (
     ErrorResponse,
     CardCreate,
     CardResponse,
     CardUpdate,
+    PracticeSubmitRequest,
     SuccessResponse,
 )
 
@@ -255,3 +257,93 @@ def delete_card(
     db.commit()
     
     return SuccessResponse(message="练习卡片已删除")
+
+
+@router.post(
+    "/{card_id}/submit",
+    response_model=CardResponse,
+    responses={
+        400: {"model": ErrorResponse},
+        401: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+    }
+)
+def submit_practice(
+    card_id: int,
+    request: PracticeSubmitRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Card:
+    card = db.execute(
+        select(Card)
+        .join(Student)
+        .where(
+            Card.id == card_id,
+            Student.user_id == current_user.id
+        )
+    ).scalar_one_or_none()
+    
+    if not card:
+        from app.errors import api_error
+        raise api_error("COMMON_002")
+    
+    result = request.result.lower()
+    if result not in ["gotit", "again"]:
+        from app.errors import api_error
+        raise api_error("COMMON_001", {"message": "无效的提交结果"})
+    
+    practice_record = PracticeRecord(
+        student_id=card.student_id,
+        card_id=card.id,
+        result=result,
+        submitted_at=datetime.now(),
+    )
+    db.add(practice_record)
+    
+    if result == "gotit":
+        new_status = (
+            "learning" if card.status == "new"
+            else "review" if card.status == "learning"
+            else "mastered"
+        )
+    else:
+        new_status = (
+            "review" if card.status == "mastered"
+            else "new"
+        )
+        
+        existing_wrong_card = db.execute(
+            select(WrongCard).where(
+                WrongCard.card_id == card.id,
+                WrongCard.is_mastered == False
+            )
+        ).scalar_one_or_none()
+        
+        if not existing_wrong_card:
+            wrong_card = WrongCard(
+                student_id=card.student_id,
+                card_id=card.id,
+                is_mastered=False,
+            )
+            db.add(wrong_card)
+    
+    card.status = new_status
+    db.commit()
+    db.refresh(card)
+    
+    if card.student_id:
+        student = db.execute(
+            select(Student).where(Student.id == card.student_id)
+        ).scalar_one_or_none()
+        if student:
+            card.student_name = student.name
+    
+    if card.question_id:
+        question = db.execute(
+            select(Question).where(Question.id == card.question_id)
+        ).scalar_one_or_none()
+        if question:
+            card.question_prompt = question.prompt
+    
+    return card

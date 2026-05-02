@@ -159,3 +159,34 @@ class CardResponse(BaseModel):
     question_prompt: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PracticeSubmitRequest(BaseModel):
+    result: str
+
+
+class PracticeRecordResponse(BaseModel):
+    id: int
+    student_id: int
+    card_id: int
+    result: str
+    submitted_at: datetime
+    student_name: str | None = None
+    card_front: str | None = None
+    card_back: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class WrongCardResponse(BaseModel):
+    id: int
+    student_id: int
+    card_id: int
+    is_mastered: bool
+    mastered_at: datetime | None
+    student_name: str | None = None
+    card_front: str | None = None
+    card_back: str | None = None
+    card_status: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
