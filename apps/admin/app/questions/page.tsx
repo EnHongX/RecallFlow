@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import AdminLayout from "../components/AdminLayout";
 import { useApp } from "../contexts/AppContext";
 import {
@@ -121,15 +121,26 @@ export default function QuestionsPage() {
     }
   }, [filters, searchKeyword, setError]);
 
+  const fetchSubjectsRef = useRef(fetchSubjects);
+  const fetchQuestionsRef = useRef(fetchQuestions);
+
   useEffect(() => {
-    fetchSubjects();
+    fetchSubjectsRef.current = fetchSubjects;
   }, [fetchSubjects]);
 
   useEffect(() => {
+    fetchQuestionsRef.current = fetchQuestions;
+  }, [fetchQuestions]);
+
+  useEffect(() => {
+    fetchSubjectsRef.current();
+  }, []);
+
+  useEffect(() => {
     if (viewMode === "list") {
-      fetchQuestions();
+      fetchQuestionsRef.current();
     }
-  }, [viewMode, fetchQuestions]);
+  }, [viewMode]);
 
   const resetForm = () => {
     setFormSubjectId(subjects[0]?.id || 0);

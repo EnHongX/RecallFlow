@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import AdminLayout from "../components/AdminLayout";
 import { useApp } from "../contexts/AppContext";
 import {
@@ -83,11 +83,17 @@ export default function CardsPage() {
     }
   }, [filters, setError]);
 
+  const fetchCardsRef = useRef(fetchCards);
+
+  useEffect(() => {
+    fetchCardsRef.current = fetchCards;
+  }, [fetchCards]);
+
   useEffect(() => {
     if (viewMode === "list") {
-      fetchCards();
+      fetchCardsRef.current();
     }
-  }, [viewMode, fetchCards]);
+  }, [viewMode]);
 
   const handleViewCard = async (card: Card) => {
     try {
