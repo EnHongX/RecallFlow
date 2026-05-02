@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   getCurrentUser,
@@ -36,7 +36,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
 
-  const fetchData = async () => {
+  const pathnameRef = useRef(pathname);
+  const routerRef = useRef(router);
+
+  useEffect(() => {
+    pathnameRef.current = pathname;
+  }, [pathname]);
+
+  useEffect(() => {
+    routerRef.current = router;
+  }, [router]);
+
+  const fetchData = useCallback(async () => {
     try {
       const userData = await getCurrentUser();
       setUser(userData);
@@ -47,16 +58,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError.message || "获取信息失败");
-      if (protectedPaths.some((path) => pathname?.startsWith(path))) {
-        router.push("/login");
+      if (protectedPaths.some((path) => pathnameRef.current?.startsWith(path))) {
+        routerRef.current.push("/login");
       }
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  const fetchDataRef = useRef(fetchData);
 
   useEffect(() => {
-    fetchData();
+    fetchDataRef.current = fetchData;
+  }, [fetchData]);
+
+  useEffect(() => {
+    fetchDataRef.current();
   }, [pathname]);
 
   const refreshData = async () => {
