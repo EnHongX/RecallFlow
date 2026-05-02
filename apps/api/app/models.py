@@ -36,10 +36,13 @@ class Student(TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(100))
     grade: Mapped[str] = mapped_column(String(20))
     is_current: Mapped[bool] = mapped_column(Boolean, default=False)
+    daily_goal_questions: Mapped[int] = mapped_column(Integer, default=20)
+    daily_goal_minutes: Mapped[int] = mapped_column(Integer, default=15)
 
     user: Mapped["User"] = relationship(back_populates="students")
     questions: Mapped[list["Question"]] = relationship(back_populates="student")
     cards: Mapped[list["Card"]] = relationship(back_populates="student")
+    practice_records: Mapped[list["PracticeRecord"]] = relationship(back_populates="student")
 
 
 class Subject(TimestampMixin, Base):
@@ -111,9 +114,10 @@ class PracticeRecord(TimestampMixin, Base):
     student_id: Mapped[int] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), index=True)
     card_id: Mapped[int] = mapped_column(ForeignKey("cards.id", ondelete="CASCADE"), index=True)
     result: Mapped[str] = mapped_column(String(20))
+    time_spent_seconds: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    student: Mapped["Student"] = relationship()
+    student: Mapped["Student"] = relationship(back_populates="practice_records")
     card: Mapped["Card"] = relationship(back_populates="practice_records")
 
 

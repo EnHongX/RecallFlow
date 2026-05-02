@@ -125,11 +125,10 @@ export default function DashboardPage() {
     setFormLoading(true);
     setError("");
     try {
-      const updated = await updateStudent(
-        editingStudent.id,
-        formName.trim(),
-        formGrade
-      );
+      const updated = await updateStudent(editingStudent.id, {
+        name: formName.trim(),
+        grade: formGrade,
+      });
       const newStudents = students.map((s) =>
         s.id === updated.id ? updated : s
       );

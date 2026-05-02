@@ -71,6 +71,7 @@ export default function StudentPracticePage() {
   const [showExplanation, setShowExplanation] = useState(false);
   const [showFunHint, setShowFunHint] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [cardStartTime, setCardStartTime] = useState<number | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -125,6 +126,7 @@ export default function StudentPracticePage() {
     setShowAnswer(false);
     setShowExplanation(false);
     setShowFunHint(false);
+    setCardStartTime(Date.now());
     setViewMode("practice");
   };
 
@@ -159,7 +161,11 @@ export default function StudentPracticePage() {
 
     setSubmitting(true);
     try {
-      await submitCardPractice(currentCard.id, result);
+      const timeSpentSeconds = cardStartTime
+        ? Math.floor((Date.now() - cardStartTime) / 1000)
+        : undefined;
+
+      await submitCardPractice(currentCard.id, result, timeSpentSeconds);
 
       const nextIndex = currentCardIndex + 1;
       if (nextIndex < cards.length) {
@@ -168,6 +174,7 @@ export default function StudentPracticePage() {
         setShowAnswer(false);
         setShowExplanation(false);
         setShowFunHint(false);
+        setCardStartTime(Date.now());
       } else {
         handleBackToList();
       }

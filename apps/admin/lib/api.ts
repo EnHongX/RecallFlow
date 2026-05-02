@@ -17,6 +17,8 @@ export interface Student {
   name: string;
   grade: string;
   is_current: boolean;
+  daily_goal_questions: number;
+  daily_goal_minutes: number;
 }
 
 export interface SuccessResponse {
@@ -100,14 +102,20 @@ export async function createStudent(name: string, grade: string): Promise<Studen
   });
 }
 
+export interface StudentUpdate {
+  name?: string;
+  grade?: string;
+  daily_goal_questions?: number;
+  daily_goal_minutes?: number;
+}
+
 export async function updateStudent(
   studentId: number,
-  name: string,
-  grade: string
+  data: StudentUpdate
 ): Promise<Student> {
   return fetchApi<Student>(`/api/v1/students/${studentId}`, {
     method: "PUT",
-    body: JSON.stringify({ name, grade }),
+    body: JSON.stringify(data),
   });
 }
 
@@ -373,5 +381,28 @@ export async function getWrongCards(studentId?: number, isMastered?: boolean): P
 export async function markWrongCardAsMastered(wrongCardId: number): Promise<SuccessResponse> {
   return fetchApi<SuccessResponse>(`/api/v1/wrong-cards/${wrongCardId}/master`, {
     method: "POST",
+  });
+}
+
+export interface DailyProgress {
+  student_id: number;
+  student_name: string;
+  completed_questions: number;
+  correct_questions: number;
+  incorrect_questions: number;
+  total_seconds: number;
+  goal_questions: number;
+  goal_minutes: number;
+  questions_progress: number;
+  minutes_progress: number;
+}
+
+export async function getDailyProgress(studentId?: number): Promise<DailyProgress[]> {
+  const params = new URLSearchParams();
+  if (studentId !== undefined) params.append("student_id", studentId.toString());
+  const queryString = params.toString();
+  const url = queryString ? `/api/v1/students/daily-progress?${queryString}` : "/api/v1/students/daily-progress";
+  return fetchApi<DailyProgress[]>(url, {
+    method: "GET",
   });
 }
