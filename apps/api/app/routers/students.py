@@ -1,18 +1,20 @@
-from typing import Sequence
+from datetime import date, datetime, time, timedelta
+from typing import Sequence, Optional
 
-from fastapi import APIRouter, Depends
-from sqlalchemy import select, update
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import select, update, func, and_, case
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_user
-from app.models import Student, User
+from app.models import Student, User, PracticeRecord
 from app.schemas import (
     ErrorResponse,
     StudentCreate,
     StudentResponse,
     StudentUpdate,
     SuccessResponse,
+    DailyProgressSummary,
 )
 
 router = APIRouter(prefix="/api/v1/students", tags=["students"])
@@ -117,8 +119,12 @@ def update_student(
         from app.errors import api_error
         raise api_error("COMMON_002")
     
-    student.name = request.name
-    student.grade = request.grade
+    update_data = request.model_dump(exclude_unset=True)
+    
+    for key, value in update_data.items():
+        if value is not None:
+            setattr(student, key, value)
+    
     db.commit()
     db.refresh(student)
     
@@ -160,3 +166,79 @@ def set_current_student(
     db.commit()
     
     return SuccessResponse(message="已切换当前孩子")
+
+
+@router.get(
+    "/daily-progress",
+    response_model=list[DailyProgressSummary],
+    responses={
+        401: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+    }
+)
+def get_daily_progress(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    student_id: Optional[int] = Query(None),
+) -> list[DailyProgressSummary]:
+    today = date.today()
+    start_of_day = datetime.combine(today, time.min)
+    end_of_day = datetime.combine(today, time.max)
+    
+    students_query = select(Student).where(Student.user_id == current_user.id)
+    if student_id is not None:
+        students_query = students_query.where(Student.id == student_id)
+    students = db.execute(students_query).scalars().all()
+    
+    result = []
+    for student in students:
+        stats_query = (
+            select(
+                func.count(PracticeRecord.id).label("total_count"),
+                func.count(case((PracticeRecord.result == "gotit", 1))).label("correct_count"),
+                func.count(case((PracticeRecord.result == "again", 1))).label("incorrect_count"),
+                func.coalesce(func.sum(PracticeRecord.time_spent_seconds), 0).label("total_seconds"),
+            )
+            .where(
+                PracticeRecord.student_id == student.id,
+                PracticeRecord.submitted_at >= start_of_day,
+                PracticeRecord.submitted_at <= end_of_day,
+            )
+        )
+        stats = db.execute(stats_query).fetchone()
+        
+        completed_questions = stats.total_count or 0
+        correct_questions = stats.correct_count or 0
+        incorrect_questions = stats.incorrect_count or 0
+        total_seconds = stats.total_seconds or 0
+        
+        goal_questions = student.daily_goal_questions
+        goal_minutes = student.daily_goal_minutes
+        
+        questions_progress = (
+            min(100.0, (completed_questions / goal_questions) * 100)
+            if goal_questions > 0
+            else 100.0
+        )
+        
+        goal_seconds = goal_minutes * 60
+        minutes_progress = (
+            min(100.0, (total_seconds / goal_seconds) * 100)
+            if goal_seconds > 0
+            else 100.0
+        )
+        
+        result.append(DailyProgressSummary(
+            student_id=student.id,
+            student_name=student.name,
+            completed_questions=completed_questions,
+            correct_questions=correct_questions,
+            incorrect_questions=incorrect_questions,
+            total_seconds=total_seconds,
+            goal_questions=goal_questions,
+            goal_minutes=goal_minutes,
+            questions_progress=questions_progress,
+            minutes_progress=minutes_progress,
+        ))
+    
+    return result

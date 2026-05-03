@@ -297,6 +297,7 @@ def submit_practice(
         student_id=card.student_id,
         card_id=card.id,
         result=result,
+        time_spent_seconds=request.time_spent_seconds,
         submitted_at=datetime.now(),
     )
     db.add(practice_record)

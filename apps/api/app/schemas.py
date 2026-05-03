@@ -55,8 +55,10 @@ class StudentCreate(BaseModel):
 
 
 class StudentUpdate(BaseModel):
-    name: str
-    grade: str
+    name: str | None = None
+    grade: str | None = None
+    daily_goal_questions: int | None = None
+    daily_goal_minutes: int | None = None
 
 
 class StudentResponse(BaseModel):
@@ -64,6 +66,8 @@ class StudentResponse(BaseModel):
     name: str
     grade: str
     is_current: bool
+    daily_goal_questions: int
+    daily_goal_minutes: int
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -163,6 +167,20 @@ class CardResponse(BaseModel):
 
 class PracticeSubmitRequest(BaseModel):
     result: str
+    time_spent_seconds: int | None = None
+
+
+class DailyProgressSummary(BaseModel):
+    student_id: int
+    student_name: str
+    completed_questions: int
+    correct_questions: int
+    incorrect_questions: int
+    total_seconds: int
+    goal_questions: int
+    goal_minutes: int
+    questions_progress: float
+    minutes_progress: float
 
 
 class PracticeRecordResponse(BaseModel):
@@ -170,6 +188,7 @@ class PracticeRecordResponse(BaseModel):
     student_id: int
     card_id: int
     result: str
+    time_spent_seconds: int | None
     submitted_at: datetime
     student_name: str | None = None
     card_front: str | None = None

@@ -160,9 +160,17 @@ export async function updateCard(cardId: number, data: CardUpdate): Promise<Card
   });
 }
 
-export async function submitCardPractice(cardId: number, result: "gotit" | "again"): Promise<Card> {
+export async function submitCardPractice(
+  cardId: number,
+  result: "gotit" | "again",
+  timeSpentSeconds?: number
+): Promise<Card> {
+  const body: { result: string; time_spent_seconds?: number } = { result };
+  if (timeSpentSeconds !== undefined && timeSpentSeconds > 0) {
+    body.time_spent_seconds = timeSpentSeconds;
+  }
   return fetchApi<Card>(`/api/v1/cards/${cardId}/submit`, {
     method: "POST",
-    body: JSON.stringify({ result }),
+    body: JSON.stringify(body),
   });
 }

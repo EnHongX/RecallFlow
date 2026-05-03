@@ -36,6 +36,8 @@ export default function StudentsPage() {
   const [formLoading, setFormLoading] = useState(false);
   const [formName, setFormName] = useState("");
   const [formGrade, setFormGrade] = useState("一年级");
+  const [formDailyGoalQuestions, setFormDailyGoalQuestions] = useState(20);
+  const [formDailyGoalMinutes, setFormDailyGoalMinutes] = useState(15);
 
   const handleAddStudent = () => {
     setFormName("");
@@ -47,6 +49,8 @@ export default function StudentsPage() {
     setEditingStudent(student);
     setFormName(student.name);
     setFormGrade(student.grade);
+    setFormDailyGoalQuestions(student.daily_goal_questions);
+    setFormDailyGoalMinutes(student.daily_goal_minutes);
     setShowEditModal(true);
   };
 
@@ -79,7 +83,12 @@ export default function StudentsPage() {
     setFormLoading(true);
     setError("");
     try {
-      await updateStudent(editingStudent.id, formName.trim(), formGrade);
+      await updateStudent(editingStudent.id, {
+        name: formName.trim(),
+        grade: formGrade,
+        daily_goal_questions: formDailyGoalQuestions,
+        daily_goal_minutes: formDailyGoalMinutes,
+      });
       setShowEditModal(false);
       setEditingStudent(null);
       await refreshData();
@@ -176,6 +185,9 @@ export default function StudentsPage() {
                       )}
                     </div>
                     <span className="student-grade">{student.grade}</span>
+                    <span style={{ fontSize: "12px", color: "#667789", marginTop: "2px" }}>
+                      每日目标：{student.daily_goal_questions} 题 / {student.daily_goal_minutes} 分钟
+                    </span>
                   </div>
                 </div>
                 <div className="student-actions">
@@ -299,6 +311,36 @@ export default function StudentsPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className="form-group">
+                <label htmlFor="edit-goal-questions" className="form-label">
+                  每日目标题数
+                </label>
+                <input
+                  id="edit-goal-questions"
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={formDailyGoalQuestions}
+                  onChange={(e) => setFormDailyGoalQuestions(Number(e.target.value))}
+                  className="form-input"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="edit-goal-minutes" className="form-label">
+                  每日学习时长（分钟）
+                </label>
+                <input
+                  id="edit-goal-minutes"
+                  type="number"
+                  min="1"
+                  max="180"
+                  value={formDailyGoalMinutes}
+                  onChange={(e) => setFormDailyGoalMinutes(Number(e.target.value))}
+                  className="form-input"
+                  required
+                />
               </div>
               <div className="modal-actions">
                 <button
