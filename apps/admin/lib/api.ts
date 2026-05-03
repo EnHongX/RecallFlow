@@ -26,6 +26,14 @@ export interface SuccessResponse {
   message: string;
 }
 
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
 interface ApiErrorResponse {
   error?: {
     code?: string;
@@ -204,8 +212,14 @@ export async function getSubjects(): Promise<Subject[]> {
   });
 }
 
-export async function getQuestions(filter?: QuestionFilter): Promise<Question[]> {
+export async function getQuestions(
+  filter?: QuestionFilter,
+  page: number = 1,
+  pageSize: number = 20
+): Promise<PaginatedResponse<Question>> {
   const params = new URLSearchParams();
+  params.append("page", page.toString());
+  params.append("page_size", pageSize.toString());
   if (filter) {
     if (filter.subject_id !== undefined) params.append("subject_id", filter.subject_id.toString());
     if (filter.type) params.append("type", filter.type);
@@ -215,8 +229,8 @@ export async function getQuestions(filter?: QuestionFilter): Promise<Question[]>
     if (filter.keyword) params.append("keyword", filter.keyword);
   }
   const queryString = params.toString();
-  const url = queryString ? `/api/v1/questions?${queryString}` : "/api/v1/questions";
-  return fetchApi<Question[]>(url, {
+  const url = `/api/v1/questions?${queryString}`;
+  return fetchApi<PaginatedResponse<Question>>(url, {
     method: "GET",
   });
 }
@@ -287,15 +301,21 @@ export interface CardFilter {
   status?: string;
 }
 
-export async function getCards(filter?: CardFilter): Promise<Card[]> {
+export async function getCards(
+  filter?: CardFilter,
+  page: number = 1,
+  pageSize: number = 20
+): Promise<PaginatedResponse<Card>> {
   const params = new URLSearchParams();
+  params.append("page", page.toString());
+  params.append("page_size", pageSize.toString());
   if (filter) {
     if (filter.student_id !== undefined) params.append("student_id", filter.student_id.toString());
     if (filter.status) params.append("status", filter.status);
   }
   const queryString = params.toString();
-  const url = queryString ? `/api/v1/cards?${queryString}` : "/api/v1/cards";
-  return fetchApi<Card[]>(url, {
+  const url = `/api/v1/cards?${queryString}`;
+  return fetchApi<PaginatedResponse<Card>>(url, {
     method: "GET",
   });
 }
@@ -326,10 +346,22 @@ export async function deleteCard(cardId: number): Promise<SuccessResponse> {
   });
 }
 
-export async function submitCardPractice(cardId: number, result: "gotit" | "again"): Promise<Card> {
+export async function submitCardPractice(
+  cardId: number,
+  result: "gotit" | "again",
+  timeSpentSeconds?: number,
+  studentAnswer?: string
+): Promise<Card> {
+  const body: { result: string; time_spent_seconds?: number; student_answer?: string } = { result };
+  if (timeSpentSeconds !== undefined && timeSpentSeconds > 0) {
+    body.time_spent_seconds = timeSpentSeconds;
+  }
+  if (studentAnswer !== undefined && studentAnswer.trim()) {
+    body.student_answer = studentAnswer.trim();
+  }
   return fetchApi<Card>(`/api/v1/cards/${cardId}/submit`, {
     method: "POST",
-    body: JSON.stringify({ result }),
+    body: JSON.stringify(body),
   });
 }
 
@@ -338,19 +370,26 @@ export interface PracticeRecord {
   student_id: number;
   card_id: number;
   result: string;
+  time_spent_seconds: number | null;
+  student_answer: string | null;
   submitted_at: string;
   student_name?: string | null;
   card_front?: string | null;
   card_back?: string | null;
 }
 
-export async function getPracticeRecords(studentId?: number, limit?: number): Promise<PracticeRecord[]> {
+export async function getPracticeRecords(
+  studentId?: number,
+  page: number = 1,
+  pageSize: number = 20
+): Promise<PaginatedResponse<PracticeRecord>> {
   const params = new URLSearchParams();
+  params.append("page", page.toString());
+  params.append("page_size", pageSize.toString());
   if (studentId !== undefined) params.append("student_id", studentId.toString());
-  if (limit !== undefined) params.append("limit", limit.toString());
   const queryString = params.toString();
-  const url = queryString ? `/api/v1/practice-records?${queryString}` : "/api/v1/practice-records";
-  return fetchApi<PracticeRecord[]>(url, {
+  const url = `/api/v1/practice-records?${queryString}`;
+  return fetchApi<PaginatedResponse<PracticeRecord>>(url, {
     method: "GET",
   });
 }
@@ -367,13 +406,20 @@ export interface WrongCard {
   card_status?: string | null;
 }
 
-export async function getWrongCards(studentId?: number, isMastered?: boolean): Promise<WrongCard[]> {
+export async function getWrongCards(
+  studentId?: number,
+  isMastered?: boolean,
+  page: number = 1,
+  pageSize: number = 20
+): Promise<PaginatedResponse<WrongCard>> {
   const params = new URLSearchParams();
+  params.append("page", page.toString());
+  params.append("page_size", pageSize.toString());
   if (studentId !== undefined) params.append("student_id", studentId.toString());
   if (isMastered !== undefined) params.append("is_mastered", isMastered.toString());
   const queryString = params.toString();
-  const url = queryString ? `/api/v1/wrong-cards?${queryString}` : "/api/v1/wrong-cards";
-  return fetchApi<WrongCard[]>(url, {
+  const url = `/api/v1/wrong-cards?${queryString}`;
+  return fetchApi<PaginatedResponse<WrongCard>>(url, {
     method: "GET",
   });
 }

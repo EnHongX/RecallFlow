@@ -8,6 +8,7 @@ import {
   type PracticeRecord,
   type Student,
   type ApiError,
+  type PaginatedResponse,
 } from "@/lib/api";
 import "../styles.css";
 
@@ -45,19 +46,25 @@ export default function PracticeRecordsPage() {
   const [records, setRecords] = useState<PracticeRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [studentFilter, setStudentFilter] = useState<number | undefined>(undefined);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const fetchRecords = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getPracticeRecords(studentFilter, 200);
-      setRecords(data);
+      const data = await getPracticeRecords(studentFilter, currentPage, pageSize);
+      setRecords(data.items);
+      setTotal(data.total);
+      setTotalPages(data.total_pages);
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError.message || "获取练习记录失败");
     } finally {
       setLoading(false);
     }
-  }, [studentFilter, setError]);
+  }, [studentFilter, currentPage, pageSize, setError]);
 
   const fetchRecordsRef = useRef(fetchRecords);
 
@@ -67,10 +74,11 @@ export default function PracticeRecordsPage() {
 
   useEffect(() => {
     fetchRecordsRef.current();
-  }, [studentFilter]);
+  }, [studentFilter, currentPage]);
 
   const handleResetFilters = () => {
     setStudentFilter(undefined);
+    setCurrentPage(1);
   };
 
   return (
@@ -87,9 +95,10 @@ export default function PracticeRecordsPage() {
             <select
               className="filter-select"
               value={studentFilter ?? ""}
-              onChange={(e) =>
-                setStudentFilter(e.target.value ? Number(e.target.value) : undefined)
-              }
+              onChange={(e) => {
+                setStudentFilter(e.target.value ? Number(e.target.value) : undefined);
+                setCurrentPage(1);
+              }}
             >
               <option value="">全部</option>
               {students.map((student: Student) => (
@@ -110,7 +119,7 @@ export default function PracticeRecordsPage() {
 
       <div className="table-container">
         <div className="table-header">
-          <h3 className="table-title">练习记录列表 ({records.length} 条)</h3>
+          <h3 className="table-title">练习记录列表 ({total} 条)</h3>
         </div>
 
         {loading ? (
@@ -159,6 +168,30 @@ export default function PracticeRecordsPage() {
           </table>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="pagination-container">
+          <div className="pagination-info">
+            共 {total} 条记录，第 {currentPage} / {totalPages} 页
+          </div>
+          <div className="pagination-controls">
+            <button
+              className="pagination-button"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            >
+              上一页
+            </button>
+            <button
+              className="pagination-button"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            >
+              下一页
+            </button>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }

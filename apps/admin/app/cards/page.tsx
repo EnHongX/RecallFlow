@@ -11,6 +11,7 @@ import {
   type CardFilter,
   type Student,
   type ApiError,
+  type PaginatedResponse,
 } from "@/lib/api";
 import "../styles.css";
 
@@ -69,19 +70,25 @@ export default function CardsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [detailCard, setDetailCard] = useState<Card | null>(null);
   const [processingId, setProcessingId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const fetchCards = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getCards(filters);
-      setCards(data);
+      const data = await getCards(filters, currentPage, pageSize);
+      setCards(data.items);
+      setTotal(data.total);
+      setTotalPages(data.total_pages);
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError.message || "获取练习卡片列表失败");
     } finally {
       setLoading(false);
     }
-  }, [filters, setError]);
+  }, [filters, currentPage, pageSize, setError]);
 
   const fetchCardsRef = useRef(fetchCards);
 
@@ -127,6 +134,7 @@ export default function CardsPage() {
 
   const handleResetFilters = () => {
     setFilters({});
+    setCurrentPage(1);
   };
 
   const renderList = () => {
@@ -145,12 +153,13 @@ export default function CardsPage() {
             <select
               className="filter-select"
               value={filters.student_id ?? ""}
-              onChange={(e) =>
+              onChange={(e) => {
                 setFilters({
                   ...filters,
                   student_id: e.target.value ? Number(e.target.value) : undefined,
-                })
-              }
+                });
+                setCurrentPage(1);
+              }}
             >
               <option value="">全部</option>
               {students.map((student: Student) => (
@@ -166,9 +175,10 @@ export default function CardsPage() {
             <select
               className="filter-select"
               value={filters.status ?? ""}
-              onChange={(e) =>
-                setFilters({ ...filters, status: e.target.value || undefined })
-              }
+              onChange={(e) => {
+                setFilters({ ...filters, status: e.target.value || undefined });
+                setCurrentPage(1);
+              }}
             >
               <option value="">全部</option>
               {STATUS_OPTIONS.filter((o) => o.value).map((option) => (
@@ -189,7 +199,7 @@ export default function CardsPage() {
 
       <div className="table-container">
         <div className="table-header">
-          <h3 className="table-title">练习卡片列表 ({cards.length} 条)</h3>
+          <h3 className="table-title">练习卡片列表 ({total} 条)</h3>
         </div>
 
         {loading ? (
@@ -256,6 +266,30 @@ export default function CardsPage() {
           </table>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="pagination-container">
+          <div className="pagination-info">
+            共 {total} 条记录，第 {currentPage} / {totalPages} 页
+          </div>
+          <div className="pagination-controls">
+            <button
+              className="pagination-button"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            >
+              上一页
+            </button>
+            <button
+              className="pagination-button"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            >
+              下一页
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 

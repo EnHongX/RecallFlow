@@ -115,6 +115,7 @@ class PracticeRecord(TimestampMixin, Base):
     card_id: Mapped[int] = mapped_column(ForeignKey("cards.id", ondelete="CASCADE"), index=True)
     result: Mapped[str] = mapped_column(String(20))
     time_spent_seconds: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    student_answer: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     student: Mapped["Student"] = relationship(back_populates="practice_records")

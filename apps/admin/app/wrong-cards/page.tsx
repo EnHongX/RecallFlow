@@ -9,6 +9,7 @@ import {
   type WrongCard,
   type Student,
   type ApiError,
+  type PaginatedResponse,
 } from "@/lib/api";
 import "../styles.css";
 
@@ -56,19 +57,25 @@ export default function WrongCardsPage() {
   const [studentFilter, setStudentFilter] = useState<number | undefined>(undefined);
   const [showMastered, setShowMastered] = useState<boolean | undefined>(undefined);
   const [processingId, setProcessingId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const fetchWrongCards = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getWrongCards(studentFilter, showMastered);
-      setWrongCards(data);
+      const data = await getWrongCards(studentFilter, showMastered, currentPage, pageSize);
+      setWrongCards(data.items);
+      setTotal(data.total);
+      setTotalPages(data.total_pages);
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError.message || "获取错题列表失败");
     } finally {
       setLoading(false);
     }
-  }, [studentFilter, showMastered, setError]);
+  }, [studentFilter, showMastered, currentPage, pageSize, setError]);
 
   const fetchWrongCardsRef = useRef(fetchWrongCards);
 
@@ -78,11 +85,12 @@ export default function WrongCardsPage() {
 
   useEffect(() => {
     fetchWrongCardsRef.current();
-  }, [studentFilter, showMastered]);
+  }, [studentFilter, showMastered, currentPage]);
 
   const handleResetFilters = () => {
     setStudentFilter(undefined);
     setShowMastered(undefined);
+    setCurrentPage(1);
   };
 
   const handleMarkAsMastered = async (wrongCardId: number) => {
@@ -114,9 +122,10 @@ export default function WrongCardsPage() {
             <select
               className="filter-select"
               value={studentFilter ?? ""}
-              onChange={(e) =>
-                setStudentFilter(e.target.value ? Number(e.target.value) : undefined)
-              }
+              onChange={(e) => {
+                setStudentFilter(e.target.value ? Number(e.target.value) : undefined);
+                setCurrentPage(1);
+              }}
             >
               <option value="">全部</option>
               {students.map((student: Student) => (
@@ -139,6 +148,7 @@ export default function WrongCardsPage() {
                 } else {
                   setShowMastered(value === "true");
                 }
+                setCurrentPage(1);
               }}
             >
               <option value="">待复习</option>
@@ -157,7 +167,7 @@ export default function WrongCardsPage() {
 
       <div className="table-container">
         <div className="table-header">
-          <h3 className="table-title">错题列表 ({wrongCards.length} 条)</h3>
+          <h3 className="table-title">错题列表 ({total} 条)</h3>
         </div>
 
         {loading ? (
@@ -228,6 +238,30 @@ export default function WrongCardsPage() {
           </table>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="pagination-container">
+          <div className="pagination-info">
+            共 {total} 条记录，第 {currentPage} / {totalPages} 页
+          </div>
+          <div className="pagination-controls">
+            <button
+              className="pagination-button"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            >
+              上一页
+            </button>
+            <button
+              className="pagination-button"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            >
+              下一页
+            </button>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }

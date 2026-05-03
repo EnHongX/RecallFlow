@@ -1,5 +1,6 @@
 import re
 from datetime import datetime
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -161,6 +162,7 @@ class CardResponse(BaseModel):
     next_review_at: datetime | None
     student_name: str | None = None
     question_prompt: str | None = None
+    question_type: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -168,6 +170,7 @@ class CardResponse(BaseModel):
 class PracticeSubmitRequest(BaseModel):
     result: str
     time_spent_seconds: int | None = None
+    student_answer: str | None = None
 
 
 class DailyProgressSummary(BaseModel):
@@ -190,6 +193,7 @@ class PracticeRecordResponse(BaseModel):
     result: str
     time_spent_seconds: int | None
     submitted_at: datetime
+    student_answer: str | None = None
     student_name: str | None = None
     card_front: str | None = None
     card_back: str | None = None
@@ -207,5 +211,18 @@ class WrongCardResponse(BaseModel):
     card_front: str | None = None
     card_back: str | None = None
     card_status: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+T = TypeVar("T")
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    items: list[T]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
 
     model_config = ConfigDict(from_attributes=True)

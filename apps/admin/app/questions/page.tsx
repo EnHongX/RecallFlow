@@ -19,6 +19,7 @@ import {
   type QuestionFilter,
   type Student,
   type ApiError,
+  type PaginatedResponse,
 } from "@/lib/api";
 import "../styles.css";
 
@@ -70,6 +71,10 @@ export default function QuestionsPage() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<QuestionFilter>({});
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
@@ -111,15 +116,17 @@ export default function QuestionsPage() {
       if (searchKeyword) {
         filterParams.keyword = searchKeyword;
       }
-      const data = await getQuestions(filterParams);
-      setQuestions(data);
+      const data = await getQuestions(filterParams, currentPage, pageSize);
+      setQuestions(data.items);
+      setTotal(data.total);
+      setTotalPages(data.total_pages);
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError.message || "获取题目列表失败");
     } finally {
       setLoading(false);
     }
-  }, [filters, searchKeyword, setError]);
+  }, [filters, searchKeyword, currentPage, pageSize, setError]);
 
   const fetchSubjectsRef = useRef(fetchSubjects);
   const fetchQuestionsRef = useRef(fetchQuestions);
@@ -330,12 +337,13 @@ export default function QuestionsPage() {
   };
 
   const handleSearch = () => {
-    fetchQuestions();
+    setCurrentPage(1);
   };
 
   const handleResetFilters = () => {
     setFilters({});
     setSearchKeyword("");
+    setCurrentPage(1);
   };
 
   const getSubjectName = (subjectId: number) => {
@@ -381,12 +389,13 @@ export default function QuestionsPage() {
             <select
               className="filter-select"
               value={filters.subject_id ?? ""}
-              onChange={(e) =>
+              onChange={(e) => {
                 setFilters({
                   ...filters,
                   subject_id: e.target.value ? Number(e.target.value) : undefined,
-                })
-              }
+                });
+                setCurrentPage(1);
+              }}
             >
               <option value="">全部</option>
               {subjects.map((subject) => (
@@ -402,9 +411,10 @@ export default function QuestionsPage() {
             <select
               className="filter-select"
               value={filters.type ?? ""}
-              onChange={(e) =>
-                setFilters({ ...filters, type: e.target.value || undefined })
-              }
+              onChange={(e) => {
+                setFilters({ ...filters, type: e.target.value || undefined });
+                setCurrentPage(1);
+              }}
             >
               <option value="">全部</option>
               {TYPE_OPTIONS.map((option) => (
@@ -420,12 +430,13 @@ export default function QuestionsPage() {
             <select
               className="filter-select"
               value={filters.grading_method ?? ""}
-              onChange={(e) =>
+              onChange={(e) => {
                 setFilters({
                   ...filters,
                   grading_method: e.target.value || undefined,
-                })
-              }
+                });
+                setCurrentPage(1);
+              }}
             >
               <option value="">全部</option>
               {GRADING_METHOD_OPTIONS.map((option) => (
@@ -441,9 +452,10 @@ export default function QuestionsPage() {
             <select
               className="filter-select"
               value={filters.status ?? ""}
-              onChange={(e) =>
-                setFilters({ ...filters, status: e.target.value || undefined })
-              }
+              onChange={(e) => {
+                setFilters({ ...filters, status: e.target.value || undefined });
+                setCurrentPage(1);
+              }}
             >
               <option value="">全部</option>
               {STATUS_OPTIONS.filter((o) => o.value).map((option) => (
@@ -459,12 +471,13 @@ export default function QuestionsPage() {
             <select
               className="filter-select"
               value={filters.student_id ?? ""}
-              onChange={(e) =>
+              onChange={(e) => {
                 setFilters({
                   ...filters,
                   student_id: e.target.value ? Number(e.target.value) : undefined,
-                })
-              }
+                });
+                setCurrentPage(1);
+              }}
             >
               <option value="">全部</option>
               {students.map((student: Student) => (
@@ -503,7 +516,7 @@ export default function QuestionsPage() {
 
       <div className="table-container">
         <div className="table-header">
-          <h3 className="table-title">题目列表 ({questions.length} 条)</h3>
+          <h3 className="table-title">题目列表 ({total} 条)</h3>
           <div className="table-actions">
             <button onClick={handleAddQuestion} className="add-button">
               + 新增题目
@@ -611,9 +624,33 @@ export default function QuestionsPage() {
         )}
       </div>
 
+      {totalPages > 1 && (
+        <div className="pagination-container">
+          <div className="pagination-info">
+            共 {total} 条记录，第 {currentPage} / {totalPages} 页
+          </div>
+          <div className="pagination-controls">
+            <button
+              className="pagination-button"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            >
+              上一页
+            </button>
+            <button
+              className="pagination-button"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            >
+              下一页
+            </button>
+          </div>
+        </div>
+      )}
+
       {showCreateCardModal && selectedQuestionForCard && (
         <div className="modal-overlay" onClick={handleCancelCreateCard}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content create-card-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title">生成练习卡片</h3>
               <button
@@ -624,19 +661,11 @@ export default function QuestionsPage() {
                 ×
               </button>
             </div>
-            <div className="modal-body">
+            <div className="modal-body create-card-modal-body">
               <div className="form-group">
                 <label className="form-label">题目</label>
-                <div
-                  className="form-textarea"
-                  style={{
-                    backgroundColor: "#f5f5f5",
-                    padding: "12px",
-                    borderRadius: "4px",
-                    minHeight: "60px",
-                  }}
-                >
-                  {truncateText(selectedQuestionForCard.prompt, 200)}
+                <div className="create-card-preview-box create-card-question-box">
+                  {selectedQuestionForCard.prompt}
                 </div>
               </div>
 
@@ -663,34 +692,36 @@ export default function QuestionsPage() {
 
               <div className="form-group">
                 <label className="form-label">卡片内容预览</label>
-                <div style={{ marginBottom: "12px" }}>
-                  <strong>正面（题干）：</strong>
-                  <p style={{ marginTop: "4px", color: "#666" }}>
-                    {selectedQuestionForCard.prompt}
-                  </p>
-                </div>
-                <div style={{ marginBottom: "12px" }}>
-                  <strong>背面（答案）：</strong>
-                  <p style={{ marginTop: "4px", color: "#666" }}>
-                    {selectedQuestionForCard.answer}
-                  </p>
-                </div>
-                {selectedQuestionForCard.child_explanation && (
-                  <div style={{ marginBottom: "12px" }}>
-                    <strong>孩子易懂版解析：</strong>
-                    <p style={{ marginTop: "4px", color: "#666" }}>
-                      {selectedQuestionForCard.child_explanation}
-                    </p>
+                <div className="create-card-preview-section">
+                  <div className="create-card-preview-item">
+                    <span className="create-card-preview-label">正面（题干）</span>
+                    <div className="create-card-preview-box">
+                      {selectedQuestionForCard.prompt}
+                    </div>
                   </div>
-                )}
-                {selectedQuestionForCard.fun_hint && (
-                  <div>
-                    <strong>趣味提示：</strong>
-                    <p style={{ marginTop: "4px", color: "#666" }}>
-                      {selectedQuestionForCard.fun_hint}
-                    </p>
+                  <div className="create-card-preview-item">
+                    <span className="create-card-preview-label">背面（答案）</span>
+                    <div className="create-card-preview-box">
+                      {selectedQuestionForCard.answer}
+                    </div>
                   </div>
-                )}
+                  {selectedQuestionForCard.child_explanation && (
+                    <div className="create-card-preview-item">
+                      <span className="create-card-preview-label">孩子易懂版解析</span>
+                      <div className="create-card-preview-box">
+                        {selectedQuestionForCard.child_explanation}
+                      </div>
+                    </div>
+                  )}
+                  {selectedQuestionForCard.fun_hint && (
+                    <div className="create-card-preview-item">
+                      <span className="create-card-preview-label">趣味提示</span>
+                      <div className="create-card-preview-box">
+                        {selectedQuestionForCard.fun_hint}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <div className="modal-footer">
