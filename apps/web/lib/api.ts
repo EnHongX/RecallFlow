@@ -162,6 +162,25 @@ export async function getCards(
   });
 }
 
+export async function getAllCards(filter?: CardFilter): Promise<Card[]> {
+  const allCards: Card[] = [];
+  let page = 1;
+  const pageSize = 100;
+
+  while (true) {
+    const response = await getCards(filter, page, pageSize);
+    allCards.push(...response.items);
+
+    if (allCards.length >= response.total || response.items.length < pageSize) {
+      break;
+    }
+
+    page++;
+  }
+
+  return allCards;
+}
+
 export async function getCard(cardId: number): Promise<Card> {
   return fetchApi<Card>(`/api/v1/cards/${cardId}`, {
     method: "GET",

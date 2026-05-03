@@ -6,6 +6,7 @@ import "../../styles.css";
 import {
   getStudents,
   getCards,
+  getAllCards,
   getCard,
   submitCardPractice,
   type Student,
@@ -92,8 +93,8 @@ export default function StudentPracticePage() {
       if (statusFilter) {
         filter.status = statusFilter;
       }
-      const response = await getCards(filter, 1, 10000);
-      setCards(response.items);
+      const allCards = await getAllCards(filter);
+      setCards(allCards);
     } catch (err) {
       const apiError = err as ApiError;
       if (apiError.code === "HTTP_401") {
