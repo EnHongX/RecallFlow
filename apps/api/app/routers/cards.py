@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import Sequence, Optional
+from math import ceil
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -15,6 +16,7 @@ from app.schemas import (
     CardUpdate,
     PracticeSubmitRequest,
     SuccessResponse,
+    PaginatedResponse,
 )
 
 router = APIRouter(prefix="/api/v1/cards", tags=["cards"])
@@ -22,7 +24,7 @@ router = APIRouter(prefix="/api/v1/cards", tags=["cards"])
 
 @router.get(
     "",
-    response_model=list[CardResponse],
+    response_model=PaginatedResponse[CardResponse],
     responses={
         401: {"model": ErrorResponse},
         500: {"model": ErrorResponse},
@@ -33,15 +35,24 @@ def get_cards(
     db: Session = Depends(get_db),
     student_id: Optional[int] = Query(None),
     status: Optional[str] = Query(None),
-) -> Sequence[Card]:
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+) -> PaginatedResponse[CardResponse]:
+    count_query = select(func.count(Card.id)).join(Student).where(Student.user_id == current_user.id)
     query = select(Card).join(Student).where(Student.user_id == current_user.id)
     
     if student_id is not None:
+        count_query = count_query.where(Card.student_id == student_id)
         query = query.where(Card.student_id == student_id)
     if status is not None:
+        count_query = count_query.where(Card.status == status)
         query = query.where(Card.status == status)
     
+    total = db.execute(count_query).scalar() or 0
+    total_pages = ceil(total / page_size) if total > 0 else 1
+    
     query = query.order_by(Card.created_at.desc())
+    query = query.offset((page - 1) * page_size).limit(page_size)
     
     cards = db.execute(query).scalars().all()
     
@@ -59,8 +70,15 @@ def get_cards(
             ).scalar_one_or_none()
             if question:
                 card.question_prompt = question.prompt
+                card.question_type = question.type
     
-    return cards
+    return PaginatedResponse(
+        items=cards,
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages,
+    )
 
 
 @router.get(
@@ -103,6 +121,7 @@ def get_card(
         ).scalar_one_or_none()
         if question:
             card.question_prompt = question.prompt
+            card.question_type = question.type
     
     return card
 
@@ -298,6 +317,7 @@ def submit_practice(
         card_id=card.id,
         result=result,
         time_spent_seconds=request.time_spent_seconds,
+        student_answer=request.student_answer,
         submitted_at=datetime.now(),
     )
     db.add(practice_record)

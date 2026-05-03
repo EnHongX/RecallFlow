@@ -199,7 +199,9 @@ def test_get_practice_records(client: TestClient):
     response = client.get("/api/v1/practice-records")
     
     assert response.status_code == 200
-    records = response.json()
+    data = response.json()
+    assert "items" in data
+    records = data["items"]
     assert len(records) == 1
     assert records[0]["result"] == "gotit"
 
@@ -221,7 +223,9 @@ def test_get_wrong_cards(client: TestClient):
     response = client.get("/api/v1/wrong-cards")
     
     assert response.status_code == 200
-    wrong_cards = response.json()
+    data = response.json()
+    assert "items" in data
+    wrong_cards = data["items"]
     assert len(wrong_cards) == 1
     assert wrong_cards[0]["is_mastered"] == False
 
@@ -241,7 +245,10 @@ def test_mark_wrong_card_as_mastered(client: TestClient):
     )
     
     wrong_cards_response = client.get("/api/v1/wrong-cards")
-    wrong_card_id = wrong_cards_response.json()[0]["id"]
+    wrong_cards_data = wrong_cards_response.json()
+    assert "items" in wrong_cards_data
+    assert len(wrong_cards_data["items"]) > 0
+    wrong_card_id = wrong_cards_data["items"][0]["id"]
     
     master_response = client.post(
         f"/api/v1/wrong-cards/{wrong_card_id}/master"

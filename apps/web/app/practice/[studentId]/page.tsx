@@ -72,6 +72,7 @@ export default function StudentPracticePage() {
   const [showFunHint, setShowFunHint] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [cardStartTime, setCardStartTime] = useState<number | null>(null);
+  const [studentAnswer, setStudentAnswer] = useState<string>("");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -126,6 +127,8 @@ export default function StudentPracticePage() {
     setShowAnswer(false);
     setShowExplanation(false);
     setShowFunHint(false);
+    setStudentAnswer("");
+    // eslint-disable-next-line react-hooks/purity
     setCardStartTime(Date.now());
     setViewMode("practice");
   };
@@ -165,7 +168,12 @@ export default function StudentPracticePage() {
         ? Math.floor((Date.now() - cardStartTime) / 1000)
         : undefined;
 
-      await submitCardPractice(currentCard.id, result, timeSpentSeconds);
+      await submitCardPractice(
+        currentCard.id,
+        result,
+        timeSpentSeconds,
+        studentAnswer || undefined
+      );
 
       const nextIndex = currentCardIndex + 1;
       if (nextIndex < cards.length) {
@@ -174,6 +182,7 @@ export default function StudentPracticePage() {
         setShowAnswer(false);
         setShowExplanation(false);
         setShowFunHint(false);
+        setStudentAnswer("");
         setCardStartTime(Date.now());
       } else {
         handleBackToList();
@@ -389,6 +398,35 @@ export default function StudentPracticePage() {
 
         {!showAnswer ? (
           <>
+            <div className="info-card" style={{ marginBottom: "20px" }}>
+              <h2 style={{ margin: 0, fontSize: "18px", marginBottom: "16px" }}>
+                ✍️ 我的答案
+              </h2>
+              <textarea
+                value={studentAnswer}
+                onChange={(e) => setStudentAnswer(e.target.value)}
+                placeholder="请输入你的答案..."
+                style={{
+                  width: "100%",
+                  minHeight: "100px",
+                  padding: "12px",
+                  fontSize: "16px",
+                  lineHeight: "1.6",
+                  border: "2px solid #e0dbcf",
+                  borderRadius: "8px",
+                  backgroundColor: "#fff",
+                  resize: "vertical",
+                  outline: "none",
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#2f6f73";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0dbcf";
+                }}
+              />
+            </div>
+
             {showFunHint && currentCard.fun_hint && (
               <div className="info-card" style={{ marginBottom: "20px" }}>
                 <h2 style={{ margin: 0, fontSize: "18px", marginBottom: "16px" }}>
@@ -431,9 +469,31 @@ export default function StudentPracticePage() {
           </>
         ) : (
           <>
+            {studentAnswer && (
+              <div className="info-card" style={{ marginBottom: "20px" }}>
+                <h2 style={{ margin: 0, fontSize: "18px", marginBottom: "16px" }}>
+                  ✍️ 我的答案
+                </h2>
+                <div
+                  style={{
+                    fontSize: "16px",
+                    lineHeight: "1.8",
+                    color: "#18212b",
+                    whiteSpace: "pre-wrap",
+                    padding: "16px",
+                    background: "#fef3c7",
+                    borderRadius: "8px",
+                    border: "1px solid #fcd34d",
+                  }}
+                >
+                  {studentAnswer}
+                </div>
+              </div>
+            )}
+
             <div className="info-card" style={{ marginBottom: "20px" }}>
               <h2 style={{ margin: 0, fontSize: "18px", marginBottom: "16px" }}>
-                ✅ 答案
+                ✅ 正确答案
               </h2>
               <div
                 style={{

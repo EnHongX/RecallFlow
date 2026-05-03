@@ -1444,3 +1444,105 @@ h1 {
   padding: 16px 24px;
   border-top: 1px solid #e0dbcf;
 }
+
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding: 12px 20px;
+  background: #ffffff;
+  border: 1px solid #e0dbcf;
+  border-radius: 12px;
+}
+
+.pagination-info {
+  font-size: 13px;
+  color: #5d6670;
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.pagination-button {
+  padding: 8px 16px;
+  border: 1px solid #e0dbcf;
+  background: #ffffff;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #5d6670;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background: #f6f6f3;
+  border-color: #75612f;
+  color: #75612f;
+}
+
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.create-card-modal {
+  max-width: 640px !important;
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh !important;
+}
+
+.create-card-modal .modal-header {
+  flex-shrink: 0;
+}
+
+.create-card-modal .modal-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.create-card-modal .modal-footer {
+  flex-shrink: 0;
+}
+
+.create-card-preview-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.create-card-preview-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.create-card-preview-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5d6670;
+}
+
+.create-card-preview-box {
+  background: #f6f6f3;
+  border: 1px solid #e0dbcf;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #18212b;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.create-card-question-box {
+  background: #fefce8;
+  border-color: #fde68a;
+  max-height: 150px;
+}

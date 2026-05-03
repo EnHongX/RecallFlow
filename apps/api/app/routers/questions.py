@@ -1,8 +1,9 @@
 from typing import Sequence, Optional
 from datetime import datetime
+from math import ceil
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select, update, or_
+from sqlalchemy import select, update, or_, func
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
@@ -14,6 +15,7 @@ from app.schemas import (
     QuestionResponse,
     QuestionUpdate,
     SuccessResponse,
+    PaginatedResponse,
 )
 
 router = APIRouter(prefix="/api/v1/questions", tags=["questions"])
@@ -21,7 +23,7 @@ router = APIRouter(prefix="/api/v1/questions", tags=["questions"])
 
 @router.get(
     "",
-    response_model=list[QuestionResponse],
+    response_model=PaginatedResponse[QuestionResponse],
     responses={
         401: {"model": ErrorResponse},
         500: {"model": ErrorResponse},
@@ -36,22 +38,37 @@ def get_questions(
     status: Optional[str] = Query(None),
     student_id: Optional[int] = Query(None),
     keyword: Optional[str] = Query(None),
-) -> Sequence[Question]:
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+) -> PaginatedResponse[QuestionResponse]:
+    count_query = select(func.count(Question.id)).where(Question.user_id == current_user.id)
     query = select(Question).where(Question.user_id == current_user.id)
     
     if subject_id is not None:
+        count_query = count_query.where(Question.subject_id == subject_id)
         query = query.where(Question.subject_id == subject_id)
     if type is not None:
+        count_query = count_query.where(Question.type == type)
         query = query.where(Question.type == type)
     if grading_method is not None:
+        count_query = count_query.where(Question.grading_method == grading_method)
         query = query.where(Question.grading_method == grading_method)
     if status is not None:
+        count_query = count_query.where(Question.status == status)
         query = query.where(Question.status == status)
     if student_id is not None:
+        count_query = count_query.where(Question.student_id == student_id)
         query = query.where(Question.student_id == student_id)
     
     if keyword is not None and keyword.strip():
         keyword = keyword.strip()
+        count_query = count_query.where(
+            or_(
+                Question.prompt.contains(keyword),
+                Question.answer.contains(keyword),
+                Question.tags.contains(keyword),
+            )
+        )
         query = query.where(
             or_(
                 Question.prompt.contains(keyword),
@@ -60,7 +77,11 @@ def get_questions(
             )
         )
     
+    total = db.execute(count_query).scalar() or 0
+    total_pages = ceil(total / page_size) if total > 0 else 1
+    
     query = query.order_by(Question.created_at.desc())
+    query = query.offset((page - 1) * page_size).limit(page_size)
     
     questions = db.execute(query).scalars().all()
     
@@ -79,7 +100,13 @@ def get_questions(
             if student:
                 question.student_name = student.name
     
-    return questions
+    return PaginatedResponse(
+        items=questions,
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages,
+    )
 
 
 @router.get(

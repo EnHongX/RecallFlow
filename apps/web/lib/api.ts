@@ -119,6 +119,7 @@ export interface Card {
   next_review_at: string | null;
   student_name?: string | null;
   question_prompt?: string | null;
+  question_type?: string | null;
 }
 
 export interface CardUpdate {
@@ -163,11 +164,15 @@ export async function updateCard(cardId: number, data: CardUpdate): Promise<Card
 export async function submitCardPractice(
   cardId: number,
   result: "gotit" | "again",
-  timeSpentSeconds?: number
+  timeSpentSeconds?: number,
+  studentAnswer?: string
 ): Promise<Card> {
-  const body: { result: string; time_spent_seconds?: number } = { result };
+  const body: { result: string; time_spent_seconds?: number; student_answer?: string } = { result };
   if (timeSpentSeconds !== undefined && timeSpentSeconds > 0) {
     body.time_spent_seconds = timeSpentSeconds;
+  }
+  if (studentAnswer !== undefined && studentAnswer.trim()) {
+    body.student_answer = studentAnswer.trim();
   }
   return fetchApi<Card>(`/api/v1/cards/${cardId}/submit`, {
     method: "POST",

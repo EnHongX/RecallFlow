@@ -16,7 +16,8 @@ export default function HomePage() {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const allQuestions = await getQuestions();
+        const response = await getQuestions(undefined, 1, 10000);
+        const allQuestions = response.items;
         setQuestions(allQuestions);
         
         if (currentStudent) {
