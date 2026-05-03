@@ -100,7 +100,7 @@ export default function CardsPage() {
     if (viewMode === "list") {
       fetchCardsRef.current();
     }
-  }, [viewMode]);
+  }, [viewMode, currentPage, filters]);
 
   const handleViewCard = async (card: Card) => {
     try {

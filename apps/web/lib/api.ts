@@ -24,6 +24,14 @@ export interface SuccessResponse {
   message: string;
 }
 
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
 interface ApiErrorResponse {
   error?: {
     code?: string;
@@ -135,15 +143,21 @@ export interface CardFilter {
   status?: string;
 }
 
-export async function getCards(filter?: CardFilter): Promise<Card[]> {
+export async function getCards(
+  filter?: CardFilter,
+  page: number = 1,
+  pageSize: number = 20
+): Promise<PaginatedResponse<Card>> {
   const params = new URLSearchParams();
+  params.append("page", page.toString());
+  params.append("page_size", pageSize.toString());
   if (filter) {
     if (filter.student_id !== undefined) params.append("student_id", filter.student_id.toString());
     if (filter.status) params.append("status", filter.status);
   }
   const queryString = params.toString();
   const url = queryString ? `/api/v1/cards?${queryString}` : "/api/v1/cards";
-  return fetchApi<Card[]>(url, {
+  return fetchApi<PaginatedResponse<Card>>(url, {
     method: "GET",
   });
 }

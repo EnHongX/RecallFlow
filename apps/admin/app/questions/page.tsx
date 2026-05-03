@@ -147,7 +147,7 @@ export default function QuestionsPage() {
     if (viewMode === "list") {
       fetchQuestionsRef.current();
     }
-  }, [viewMode]);
+  }, [viewMode, currentPage, filters, searchKeyword]);
 
   const resetForm = () => {
     setFormSubjectId(subjects[0]?.id || 0);

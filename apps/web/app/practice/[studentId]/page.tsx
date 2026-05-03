@@ -92,8 +92,8 @@ export default function StudentPracticePage() {
       if (statusFilter) {
         filter.status = statusFilter;
       }
-      const cardsData = await getCards(filter);
-      setCards(cardsData);
+      const response = await getCards(filter, 1, 10000);
+      setCards(response.items);
     } catch (err) {
       const apiError = err as ApiError;
       if (apiError.code === "HTTP_401") {
