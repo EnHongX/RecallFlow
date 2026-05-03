@@ -4,27 +4,30 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import AdminLayout from "../components/AdminLayout";
 import { useApp } from "../contexts/AppContext";
-import { getQuestions, type Question, type ApiError } from "@/lib/api";
+import { getQuestions, type ApiError } from "@/lib/api";
 import "../styles.css";
 
 export default function HomePage() {
   const { currentStudent, students, setError } = useApp();
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [currentStudentQuestions, setCurrentStudentQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalQuestions, setTotalQuestions] = useState(0);
+  const [currentStudentQuestions, setCurrentStudentQuestions] = useState(0);
 
   useEffect(() => {
-    const fetchQuestions = async () => {
+    const fetchStats = async () => {
       try {
-        const response = await getQuestions(undefined, 1, 10000);
-        const allQuestions = response.items;
-        setQuestions(allQuestions);
-        
+        const allResponse = await getQuestions(undefined, 1, 1);
+        setTotalQuestions(allResponse.total);
+
         if (currentStudent) {
-          const studentQuestions = allQuestions.filter(q => q.student_id === currentStudent.id);
-          setCurrentStudentQuestions(studentQuestions);
+          const studentResponse = await getQuestions(
+            { student_id: currentStudent.id },
+            1,
+            1
+          );
+          setCurrentStudentQuestions(studentResponse.total);
         } else {
-          setCurrentStudentQuestions([]);
+          setCurrentStudentQuestions(0);
         }
       } catch (err) {
         const apiError = err as ApiError;
@@ -34,7 +37,7 @@ export default function HomePage() {
       }
     };
 
-    fetchQuestions();
+    fetchStats();
   }, [currentStudent, setError]);
 
   const stats = [
@@ -43,14 +46,14 @@ export default function HomePage() {
       value: students.length,
       icon: (
         <svg className="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
         </svg>
       ),
       color: "blue",
     },
     {
       label: "题目总数",
-      value: questions.length,
+      value: totalQuestions,
       icon: (
         <svg className="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -60,7 +63,7 @@ export default function HomePage() {
     },
     {
       label: "当前孩子题目",
-      value: currentStudentQuestions.length,
+      value: currentStudentQuestions,
       icon: (
         <svg className="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
