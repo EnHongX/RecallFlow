@@ -627,6 +627,153 @@ h1 {
   background: #faf9f6;
 }
 
+.section-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 32px 0;
+}
+
+.section-card {
+  background: #ffffff;
+  border: 1px solid #e0dbcf;
+  border-radius: 8px;
+  color: #18212b;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 156px;
+  padding: 20px;
+  text-decoration: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.section-card:hover {
+  border-color: #75612f;
+  box-shadow: 0 8px 24px rgba(24, 33, 43, 0.08);
+}
+
+.section-card strong {
+  font-size: 18px;
+}
+
+.section-card p {
+  color: #5d6670;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.section-kicker {
+  color: #75612f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.workflow-strip {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 24px;
+}
+
+.workflow-step {
+  background: #ffffff;
+  border: 1px solid #e0dbcf;
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.workflow-index {
+  align-items: center;
+  background: #fefce8;
+  border: 1px solid #fde68a;
+  border-radius: 999px;
+  color: #75612f;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 700;
+  height: 28px;
+  justify-content: center;
+  margin-bottom: 14px;
+  width: 28px;
+}
+
+.workflow-step strong {
+  display: block;
+  font-size: 17px;
+  margin-bottom: 8px;
+}
+
+.workflow-step p {
+  color: #5d6670;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.task-shell {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  margin-bottom: 24px;
+}
+
+.task-panel {
+  background: #ffffff;
+  border: 1px solid #e0dbcf;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.task-panel-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.task-panel h2 {
+  font-size: 20px;
+  margin: 0 0 16px;
+}
+
+.form-preview-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-preview-field {
+  background: #f6f6f3;
+  border: 1px dashed #d6d0c2;
+  border-radius: 8px;
+  color: #5d6670;
+  font-size: 14px;
+  padding: 14px 16px;
+}
+
+.form-preview-field.wide {
+  grid-column: 1 / -1;
+  min-height: 88px;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tag-pill {
+  background: #fefce8;
+  border: 1px solid #fde68a;
+  border-radius: 999px;
+  color: #75612f;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 12px;
+}
+
 .admin-layout {
   display: flex;
   min-height: 100vh;
@@ -1174,7 +1321,10 @@ h1 {
 
 @media (max-width: 768px) {
   .dashboard-grid,
-  .grid {
+  .grid,
+  .section-grid,
+  .workflow-strip,
+  .task-shell {
     grid-template-columns: 1fr;
   }
 

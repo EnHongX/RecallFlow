@@ -722,6 +722,143 @@ h1 {
   color: #6b7280;
 }
 
+.student-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.student-chip {
+  align-items: flex-start;
+  background: #ffffff;
+  border: 1px solid #dfe6ef;
+  border-radius: 8px;
+  color: #172026;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+  padding: 12px 16px;
+  text-align: left;
+}
+
+.student-chip.active {
+  background: #eef8f8;
+  border-color: #2f6f73;
+}
+
+.student-chip span {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.student-chip small {
+  color: #667789;
+  font-size: 12px;
+}
+
+.task-list {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.task-card {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #dfe6ef;
+  border-radius: 8px;
+  color: #172026;
+  display: flex;
+  justify-content: space-between;
+  min-height: 120px;
+  padding: 22px;
+  text-decoration: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.task-card:hover {
+  border-color: #2f6f73;
+  box-shadow: 0 8px 24px rgba(23, 32, 38, 0.08);
+}
+
+.task-card h2 {
+  font-size: 21px;
+  margin: 8px 0;
+}
+
+.task-card p {
+  color: #52616f;
+  margin: 0;
+}
+
+.task-status {
+  color: #2f6f73;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.task-action {
+  align-items: center;
+  background: #2f6f73;
+  border-radius: 999px;
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 700;
+  height: 36px;
+  justify-content: center;
+  min-width: 64px;
+  padding: 0 16px;
+}
+
+.study-frame {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 280px;
+}
+
+.study-main,
+.study-side {
+  background: #ffffff;
+  border: 1px solid #dfe6ef;
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.study-main h2,
+.study-side h2 {
+  font-size: 22px;
+  margin: 10px 0 12px;
+}
+
+.study-main p {
+  color: #52616f;
+  line-height: 1.7;
+  margin: 0 0 24px;
+}
+
+.answer-placeholder {
+  align-items: center;
+  background: #f5f7fb;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  color: #667789;
+  display: flex;
+  min-height: 180px;
+  justify-content: center;
+  padding: 24px;
+}
+
+.study-side ol {
+  color: #52616f;
+  line-height: 1.9;
+  margin: 0 0 24px;
+  padding-left: 20px;
+}
+
 @media (max-width: 768px) {
   .dashboard-grid,
   .grid {

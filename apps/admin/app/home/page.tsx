@@ -97,7 +97,7 @@ export default function HomePage() {
     <AdminLayout title="首页">
       <div className="page-header">
         <h1 className="page-title">总览</h1>
-        <p className="page-subtitle">查看您的家庭学习管理数据概览</p>
+        <p className="page-subtitle">围绕课程资料、学习任务和完成情况管理孩子的每日学习</p>
       </div>
 
       <div className="stats-grid">
@@ -153,12 +153,30 @@ export default function HomePage() {
         </div>
       )}
 
+      <div className="section-grid">
+        <Link href="/course-materials" className="section-card">
+          <span className="section-kicker">资料</span>
+          <strong>整理学校课程内容</strong>
+          <p>按课程、课时、资料和题目组织孩子每天需要复习的内容。</p>
+        </Link>
+        <Link href="/learning-tasks" className="section-card">
+          <span className="section-kicker">任务</span>
+          <strong>布置今日学习任务</strong>
+          <p>把资料、题目、背诵和错题组合成孩子能直接完成的任务。</p>
+        </Link>
+        <Link href="/task-results" className="section-card">
+          <span className="section-kicker">结果</span>
+          <strong>查看完成情况</strong>
+          <p>关注是否完成、哪里出错、哪些内容需要明天继续练。</p>
+        </Link>
+      </div>
+
       <div className="action-buttons">
         <Link href="/students" className="action-button-link secondary">
           管理孩子
         </Link>
-        <Link href="/questions" className="action-button-link primary">
-          管理题库
+        <Link href="/learning-tasks" className="action-button-link primary">
+          布置任务
         </Link>
       </div>
     </AdminLayout>

@@ -60,7 +60,7 @@ export default function HomePage() {
   };
 
   const handleStartPractice = () => {
-    router.push("/practice");
+    router.push("/tasks");
   };
 
   if (loading) {
@@ -90,7 +90,7 @@ export default function HomePage() {
             <h1 className="dashboard-title">
               欢迎回来，{user?.display_name || user?.phone}
             </h1>
-            <p className="dashboard-subtitle">孩子的练习入口，简单易用</p>
+            <p className="dashboard-subtitle">孩子的今日任务入口，简单清楚</p>
           </div>
           <button onClick={handleLogout} className="logout-button">
             退出登录
@@ -111,7 +111,7 @@ export default function HomePage() {
             </div>
           </div>
           <button onClick={handleStartPractice} className="action-button primary">
-            开始练习
+            查看今日任务
           </button>
         </div>
       ) : (
@@ -122,17 +122,17 @@ export default function HomePage() {
       )}
 
       <div className="info-card">
-        <h2>📚 练习说明</h2>
-        <p>这是专为孩子设计的练习入口，功能简单易用：</p>
+        <h2>今日任务</h2>
+        <p>孩子端只保留最直接的学习路径：</p>
         <ul>
-          <li>选择要练习的孩子</li>
-          <li>查看待练习的卡片列表</li>
-          <li>逐个练习，查看题干、答案和解析</li>
-          <li>提交后自动进入下一题</li>
+          <li>看到今天要完成的任务</li>
+          <li>一次进入一个任务</li>
+          <li>按步骤完成学习、答题或背诵</li>
+          <li>做完后看到结果反馈</li>
         </ul>
         <div className="action-buttons" style={{ marginTop: "24px" }}>
           <button onClick={handleStartPractice} className="action-button primary">
-            立即开始练习 →
+            进入今日任务
           </button>
         </div>
       </div>
